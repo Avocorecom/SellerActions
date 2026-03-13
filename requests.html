@@ -97,27 +97,41 @@
 <footer class="footer" id="mainFooter"></footer>
 
 <script src="js/data.js"></script>
+<script src="js/db.js"></script>
 <script src="js/app.js"></script>
 <script>
   renderNav('requests');
   renderFooter();
 
-  function renderRequests(sortBy) {
-    const requests = getFeatureRequests(sortBy);
+  let currentSort = 'votes';
+
+  async function renderRequests(sortBy) {
+    currentSort = sortBy || currentSort;
     const grid = document.getElementById('requestGrid');
+    grid.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">Loading requests...</div>';
+
+    const requests = await RequestsDB.getAll(currentSort);
+
+    if (requests.length === 0) {
+      grid.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">No requests yet. Be the first to submit one!</div>';
+      return;
+    }
+
+    const statusLabels = { open: 'Open', popular: 'Popular', planned: 'Planned', building: 'In Development', launched: 'Launched', pending: 'Under Review' };
 
     grid.innerHTML = requests.map(r => {
-      const voted = Votes.hasVoted(r.id);
-      const totalVotes = r.votes + Votes.localCount(r.id);
+      const voted = r.hasVoted || RequestsDB.hasVoted(r.id);
       const statusClass = 'status-' + r.status;
-      const statusLabels = { open: 'Open', popular: 'Popular', planned: 'Planned', building: 'In Development', launched: 'Launched' };
+      const dateStr = r.created_at ? r.created_at.slice(0, 10) : (r.date || '');
+      const comments = r.comments || [];
+      const safeTitle = (r.title || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
-      const commentsHtml = r.comments.length > 0 ? `
+      const commentsHtml = comments.length > 0 ? `
         <div class="request-comments" id="comments-${r.id}">
-          ${r.comments.map(c => `
+          ${comments.map(c => `
             <div class="comment-item">
-              <span class="comment-author">${c.author}</span>
-              <span class="comment-date">${c.date}</span>
+              <span class="comment-author">${c.author || 'Anonymous'}</span>
+              <span class="comment-date">${(c.created_at || c.date || '').slice(0, 10)}</span>
               <div class="comment-text">${c.text}</div>
             </div>
           `).join('')}
@@ -127,24 +141,24 @@
       return `
         <div class="request-card" id="card-${r.id}">
           <div class="request-vote">
-            <button class="vote-btn ${voted ? 'voted' : ''}" onclick="handleVote('${r.id}', '${r.title.replace(/'/g, "\\'")}', this)" title="Vote for this">
+            <button class="vote-btn ${voted ? 'voted' : ''}" onclick="handleVote('${r.id}', '${safeTitle}', this)" title="Vote for this">
               <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
             </button>
-            <span class="vote-count" id="votes-${r.id}">${totalVotes}</span>
+            <span class="vote-count" id="votes-${r.id}">${r.votes}</span>
           </div>
           <div class="request-body">
             <h3>${r.title}</h3>
             <p>${r.description}</p>
             <div class="request-meta">
               <span class="request-status ${statusClass}">${statusLabels[r.status] || r.status}</span>
-              <span>${r.platform}</span>
-              <span>${r.date}</span>
-              <span>${r.comments.length} comment${r.comments.length !== 1 ? 's' : ''}</span>
+              <span>${r.platform || ''}</span>
+              <span>${dateStr}</span>
+              <span>${comments.length} comment${comments.length !== 1 ? 's' : ''}</span>
             </div>
             ${commentsHtml}
-            <div class="comment-form" id="cf-${r.id}">
-              <input type="text" id="comment-input-${r.id}" placeholder="Add a comment..." onkeydown="if(event.key==='Enter') handleComment('${r.id}', '${r.title.replace(/'/g, "\\'")}')">
-              <button onclick="handleComment('${r.id}', '${r.title.replace(/'/g, "\\'")}')">Post</button>
+            <div class="comment-form">
+              <input type="text" id="comment-input-${r.id}" placeholder="Add a comment..." onkeydown="if(event.key==='Enter') handleComment('${r.id}', '${safeTitle}')">
+              <button onclick="handleComment('${r.id}', '${safeTitle}')">Post</button>
             </div>
           </div>
         </div>
@@ -159,20 +173,16 @@
   }
 
   async function handleVote(id, title, btn) {
-    const wasVoted = Votes.hasVoted(id);
-    Votes.toggle(id);
-    const isNowVoted = Votes.hasVoted(id);
-
+    const isNowVoted = await RequestsDB.vote(id);
     btn.classList.toggle('voted', isNowVoted);
 
-    const request = FEATURE_REQUESTS.find(r => r.id === id);
-    const baseVotes = request ? request.votes : 0;
-    const totalVotes = baseVotes + Votes.localCount(id);
-    document.getElementById('votes-' + id).textContent = totalVotes;
+    // Re-fetch to get accurate count
+    const requests = await RequestsDB.getAll(currentSort);
+    const req = requests.find(r => r.id === id);
+    if (req) document.getElementById('votes-' + id).textContent = req.votes;
 
     if (isNowVoted) {
       Toast.show('Voted!', `Your vote for "${title}" has been recorded.`, 'success');
-      await submitVote(id, title);
     } else {
       Toast.show('Vote Removed', `Your vote for "${title}" has been removed.`, 'info');
     }
@@ -183,20 +193,21 @@
     const text = input?.value?.trim();
     if (!text) return;
 
+    input.value = '';
+    const comment = await RequestsDB.addComment(id, 'Anonymous', text);
+
     const commentsDiv = document.getElementById('comments-' + id);
     commentsDiv.style.display = 'block';
-    const today = new Date().toISOString().slice(0, 10);
+    const dateStr = (comment.created_at || new Date().toISOString()).slice(0, 10);
     commentsDiv.innerHTML += `
       <div class="comment-item">
-        <span class="comment-author">You</span>
-        <span class="comment-date">${today}</span>
-        <div class="comment-text">${text}</div>
+        <span class="comment-author">${comment.author || 'You'}</span>
+        <span class="comment-date">${dateStr}</span>
+        <div class="comment-text">${comment.text || text}</div>
       </div>
     `;
-    input.value = '';
 
-    Toast.show('Comment Posted', 'Your comment has been submitted for review.', 'success');
-    await submitComment(id, title, text, 'Anonymous User');
+    Toast.show('Comment Posted', 'Your comment has been saved.', 'success');
   }
 
   async function handleRequestSubmit() {
@@ -212,14 +223,14 @@
     const btn = document.querySelector('.request-form .btn-primary');
     if (btn) { btn.disabled = true; btn.textContent = 'Submitting...'; }
 
-    await submitFeatureRequest({ title, description: desc, email, platform });
+    await RequestsDB.submitRequest(title, desc, email, platform);
 
     document.getElementById('reqTitle').value = '';
     document.getElementById('reqDesc').value = '';
     document.getElementById('reqEmail').value = '';
 
     if (btn) { btn.disabled = false; btn.textContent = 'Submit Request'; }
-    Toast.show('Request Submitted!', 'Thanks! Your idea is under review. If approved, it will appear on this page for voting.', 'success');
+    Toast.show('Request Submitted!', 'Thanks! Your idea is under review. Once approved, it will appear here for voting.', 'success');
   }
 
   renderRequests('votes');
