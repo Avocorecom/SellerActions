@@ -49,7 +49,35 @@ The site is fully static (HTML/CSS/JS) with dynamic behavior powered by vanilla 
 - **Notify Me** — Modal form for coming-soon products; sends email to Formspree
 - **Store Integration Flow** — 3-step checkout: Review Cart → Connect Store → Start Trial
 - **14-Day Free Trial** — All products include a free trial with no credit card required
+- **Bundle Discount** — 50%+ discount automatically applied when 2 or more tools are in the cart. A persistent discount banner is shown site-wide.
 - **Toast Notifications** — Success/info toasts for all user actions
+
+### Feature Request System
+A community-driven roadmap where users can submit tool ideas, vote on requests, and leave comments. Accessible at `/requests.html` and via the floating "Request a Feature" button on every page.
+
+- **Submit Ideas** — Users describe a pain point, select a platform, and provide their email
+- **Vote** — Upvote/downvote requests; votes are deduplicated per browser fingerprint
+- **Comment** — Leave comments on any request
+- **Email Prompt** — A popup optionally collects the user's email before voting or commenting. Email is saved to localStorage so users are only asked once. Skipping is always allowed.
+- **Status Lifecycle** — Requests go through: `pending` → `open` → `popular` → `planned` → `building` → `launched`
+- **Admin Control** — Change request status directly in the Supabase dashboard (Table Editor → `feature_requests` → edit `status`)
+- **Sorting** — Sort by most voted or newest
+
+### Supabase Backend
+The feature request system is powered by [Supabase](https://supabase.com) (PostgreSQL + REST API). Three tables:
+
+| Table | Purpose |
+|-------|---------|
+| `feature_requests` | Stores all submitted ideas with title, description, email, platform, status, vote count |
+| `votes` | One row per vote, deduplicated by browser fingerprint. Optional email column. |
+| `comments` | User comments on requests. Optional email column. |
+
+Row Level Security (RLS) policies allow:
+- **Public read** for all non-pending requests
+- **Public insert** for new requests, votes, and comments
+- **Public update** for vote counts
+
+If Supabase is not configured, the system falls back to localStorage + hardcoded seed data.
 
 ### SEO
 - Semantic HTML5 structure
@@ -65,18 +93,21 @@ The site is fully static (HTML/CSS/JS) with dynamic behavior powered by vanilla 
 
 ```
 SellerActions/
-├── index.html          # Homepage — hero, featured tools, categories, all tools, search/filter
-├── product.html        # Dynamic product detail page (via ?slug=xxx)
-├── category.html       # Dynamic category listing page (via ?cat=xxx)
-├── cart.html           # Cart + store integration flow (3-step)
+├── index.html              # Homepage — hero, featured tools, categories, all tools, search/filter
+├── product.html            # Dynamic product detail page (via ?slug=xxx)
+├── category.html           # Dynamic category listing page (via ?cat=xxx)
+├── cart.html               # Cart + store integration flow (3-step) with bundle discount
+├── requests.html           # Feature requests — submit ideas, vote, comment
 ├── css/
-│   └── style.css       # All shared styles (dark theme, responsive)
+│   └── style.css           # All shared styles (dark theme, responsive, email prompt modal)
 ├── js/
-│   ├── data.js         # Product catalog, categories, platforms, helper functions
-│   └── app.js          # Cart system, toast notifications, modals, shared components
+│   ├── data.js             # Product catalog, categories, platforms, helper functions
+│   ├── app.js              # Cart, toast, modals, shared components, discount logic
+│   └── db.js               # Supabase integration — feature requests, votes, comments
+├── supabase-schema.sql     # SQL schema for Supabase tables, RLS policies, and seed data
 ├── .github/
 │   └── workflows/
-│       └── deploy.yml  # GitHub Pages deployment workflow
+│       └── deploy.yml      # GitHub Pages deployment workflow
 ├── .gitignore
 └── README.md
 ```
@@ -113,10 +144,21 @@ Helper functions:
 
 ### App Logic (`js/app.js`)
 - **Cart** — `Cart.addItem(slug)`, `Cart.removeItem(slug)`, `Cart.getProducts()`, etc. Stored in localStorage.
+- **Discount** — `Discount.isEligible()`, `Discount.apply(price)` — 50%+ off for 2+ items in cart.
 - **Notify** — `Notify.subscribe(slug, email)` saves to localStorage AND sends to Formspree.
 - **Toast** — `Toast.show(title, message, type)` for success/info notifications.
 - **Modal** — `Modal.showNotifyForm(product)` opens the notify-me modal.
 - **Shared Components** — `renderNav()`, `renderFooter()`, `renderToolCard()`, `renderCategoryCard()`.
+
+### Supabase Layer (`js/db.js`)
+- **`db`** — Low-level REST client for Supabase (query, insert, update, delete).
+- **`RequestsDB`** — High-level API for the feature request system:
+  - `RequestsDB.getAll(sortBy)` — Fetch all approved requests with comments
+  - `RequestsDB.vote(requestId, email)` — Toggle vote (with optional email)
+  - `RequestsDB.addComment(requestId, author, text, email)` — Post a comment (with optional email)
+  - `RequestsDB.submitRequest(title, desc, email, platform)` — Submit a new idea
+  - `RequestsDB.hasVoted(requestId)` — Check local vote state
+- Falls back to localStorage if Supabase is not configured.
 
 ### Form Submissions (Formspree)
 All form submissions (Notify Me + Trial Signup) are sent to Formspree. The endpoint is configured at the top of `js/app.js`:
@@ -139,6 +181,32 @@ To use your own Formspree form:
 4. Replace the `FORMSPREE_ENDPOINT` value in `js/app.js`
 
 Submissions will arrive in your Formspree dashboard and optionally forward to your email.
+
+### Supabase Setup
+Feature requests, votes, and comments are stored in Supabase. Configuration is in `js/db.js`:
+
+```js
+const SUPABASE_URL = 'https://xxxxx.supabase.co';
+const SUPABASE_KEY = 'your-anon-public-key';
+```
+
+**Initial setup:**
+1. Create a free project at [supabase.com](https://supabase.com)
+2. Go to SQL Editor in the Supabase dashboard
+3. Copy and run the contents of `supabase-schema.sql` — this creates all tables, indexes, RLS policies, and seed data
+4. Go to Settings → API → copy the Project URL and `anon` `public` key
+5. Paste them into `js/db.js`
+
+**Adding email columns (for collecting voter/commenter emails):**
+```sql
+ALTER TABLE votes ADD COLUMN IF NOT EXISTS email text;
+ALTER TABLE comments ADD COLUMN IF NOT EXISTS email text;
+```
+
+**Managing requests:**
+- New submissions go to `pending` status (hidden from public)
+- To approve: open Table Editor → `feature_requests` → change `status` to `open`
+- To highlight: set `status` to `popular` or `planned`
 
 ---
 
@@ -234,7 +302,8 @@ Top-scored products (8.5+) are automatically marked as "Featured / TOP PICK."
 - **CSS3** — Custom properties, Grid, Flexbox, animations
 - **Vanilla JavaScript** — No frameworks, no dependencies
 - **Google Fonts** — DM Sans + JetBrains Mono
-- **Formspree** — Form submission handling
+- **Formspree** — Form submission handling (Notify Me + Trial Signup)
+- **Supabase** — PostgreSQL database for feature requests, votes, and comments (REST API + RLS)
 - **GitHub Pages** — Hosting and deployment
 - **GitHub Actions** — CI/CD pipeline
 
