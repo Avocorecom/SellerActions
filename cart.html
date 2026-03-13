@@ -223,19 +223,36 @@
     document.getElementById('sellerId').placeholder = config.placeholder;
   }
 
-  function handleIntegrationSubmit() {
+  async function handleIntegrationSubmit() {
     if (!selectedStore) {
       Toast.show('Select a Store', 'Please select which platform to connect.', 'info');
       return;
     }
 
+    const email = document.getElementById('storeEmail')?.value?.trim() || '';
+    const storeName = document.getElementById('storeName')?.value?.trim() || '';
+    const sellerId = document.getElementById('sellerId')?.value?.trim() || '';
+
     if (selectedStore !== 'other') {
-      const email = document.getElementById('storeEmail')?.value?.trim();
       if (!email || !email.includes('@')) {
         Toast.show('Email Required', 'Please enter a valid email address.', 'info');
         return;
       }
     }
+
+    const btn = document.getElementById('continueBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Setting up...'; }
+
+    const items = Cart.getProducts();
+    await submitTrialSignup({
+      email: email,
+      store_name: storeName,
+      store_type: selectedStore,
+      seller_id: sellerId,
+      tools: items.map(p => p.name).join(', '),
+      tools_count: items.length,
+      total_price: items.map(p => p.priceLabel).join(', ')
+    });
 
     setStep(3);
   }

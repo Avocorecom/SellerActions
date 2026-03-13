@@ -1,5 +1,9 @@
 // SellerActions - Core Application Logic
-// Cart system, shared components (nav, footer), toast notifications, modals
+
+// ===== CONFIG =====
+// Create a free form at https://formspree.io and paste your endpoint below.
+// Notify Me submissions AND trial signups are sent here.
+const FORMSPREE_ENDPOINT = 'https://formspree.io/f/xwpkgkqz';
 
 // ===== CART SYSTEM =====
 const Cart = {
@@ -63,11 +67,37 @@ const Notify = {
     } catch { return {}; }
   },
 
-  subscribe(slug, email) {
+  async subscribe(slug, email) {
     const data = this.getEmails();
     if (!data[slug]) data[slug] = [];
     if (!data[slug].includes(email)) data[slug].push(email);
     localStorage.setItem(this.KEY, JSON.stringify(data));
+
+    const product = getProductBySlug(slug);
+    await this.sendToFormspree({
+      _subject: `Notify Me: ${product?.name || slug}`,
+      type: 'notify_me',
+      email: email,
+      product_name: product?.name || slug,
+      product_slug: slug,
+      product_category: CATEGORIES[product?.cat]?.name || '',
+      product_price: product?.priceLabel || '',
+      platforms: product?.platforms?.map(p => PLATFORMS[p]?.name).join(', ') || '',
+      timestamp: new Date().toISOString()
+    });
+  },
+
+  async sendToFormspree(data) {
+    if (!FORMSPREE_ENDPOINT || FORMSPREE_ENDPOINT.includes('YOUR_FORM_ID')) return;
+    try {
+      await fetch(FORMSPREE_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(data)
+      });
+    } catch (e) {
+      console.warn('Form submission failed:', e);
+    }
   },
 
   isSubscribed(slug) {
@@ -157,16 +187,37 @@ const Modal = {
   }
 };
 
-function handleNotifySubmit(slug) {
+async function handleNotifySubmit(slug) {
   const email = document.getElementById('notifyEmail')?.value?.trim();
   if (!email || !email.includes('@')) {
     Toast.show('Invalid Email', 'Please enter a valid email address.', 'info');
     return;
   }
   const product = getProductBySlug(slug);
-  Notify.subscribe(slug, email);
+  const btn = document.querySelector('.modal .btn-primary');
+  if (btn) { btn.disabled = true; btn.textContent = 'Subscribing...'; }
+
+  await Notify.subscribe(slug, email);
   Modal.close();
   Toast.show('Subscribed!', `We'll notify you when ${product?.name || 'this tool'} launches.`, 'success');
+}
+
+async function submitTrialSignup(data) {
+  if (!FORMSPREE_ENDPOINT || FORMSPREE_ENDPOINT.includes('YOUR_FORM_ID')) return;
+  try {
+    await fetch(FORMSPREE_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({
+        _subject: `New Trial Signup: ${data.store_type}`,
+        type: 'trial_signup',
+        ...data,
+        timestamp: new Date().toISOString()
+      })
+    });
+  } catch (e) {
+    console.warn('Trial signup submission failed:', e);
+  }
 }
 
 // ===== ADD TO CART HANDLER =====
