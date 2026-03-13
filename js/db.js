@@ -3,8 +3,8 @@
 // Setup: Create a free project at https://supabase.com, run the SQL schema,
 // then paste your URL and anon key below.
 
-const SUPABASE_URL = '';   // e.g. 'https://xxxxx.supabase.co'
-const SUPABASE_KEY = '';   // your anon/public key
+const SUPABASE_URL = 'https://ccbcmxgdzxzgqkszcddk.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_We-SacbNSc3O7JfE8g1DGA_ltenJNSK';
 
 const DB_ENABLED = !!(SUPABASE_URL && SUPABASE_KEY);
 
