@@ -1217,3 +1217,92 @@ function searchProducts(query) {
 function getCategoryCount(catSlug) {
   return PRODUCTS.filter(p => p.cat === catSlug).length;
 }
+
+// ===== FEATURE REQUESTS =====
+// status: open | popular | planned | building | launched
+// Approved requests appear here. New submissions go through Formspree.
+const FEATURE_REQUESTS = [
+  {
+    id: "fr-001",
+    title: "Inventory Demand Forecasting with AI",
+    description: "I need a tool that predicts when I'll run out of stock based on sales velocity, seasonality, and trends. Current restock planning is all guesswork.",
+    author: "FBA Seller",
+    date: "2026-03-01",
+    status: "popular",
+    votes: 47,
+    platform: "Amazon",
+    comments: [
+      { author: "Multi-Channel Mike", text: "This would save me so much time. I restock based on gut feeling and it's not working.", date: "2026-03-03" },
+      { author: "PL Sarah", text: "Especially useful if it factors in lead times from my supplier in China.", date: "2026-03-05" }
+    ]
+  },
+  {
+    id: "fr-002",
+    title: "Automated Competitor Price Monitoring",
+    description: "I want real-time alerts when my competitors change prices on the same ASINs. Need to react fast to stay competitive without manually checking every day.",
+    author: "Wholesale Seller",
+    date: "2026-03-02",
+    status: "planned",
+    votes: 38,
+    platform: "Amazon",
+    comments: [
+      { author: "BrandOwner22", text: "Yes! Especially for MAP monitoring across authorized resellers.", date: "2026-03-04" }
+    ]
+  },
+  {
+    id: "fr-003",
+    title: "TikTok Shop to Shopify Order Sync",
+    description: "I sell on TikTok Shop and Shopify but orders don't sync. I need one dashboard for both channels, including inventory levels.",
+    author: "D2C Brand Owner",
+    date: "2026-03-05",
+    status: "open",
+    votes: 29,
+    platform: "TikTok Shop",
+    comments: []
+  },
+  {
+    id: "fr-004",
+    title: "Automated VAT/Sales Tax Calculator for EU Expansion",
+    description: "As a US seller expanding to EU marketplaces, calculating VAT for each country is a nightmare. Need something that auto-calculates and generates reports.",
+    author: "Global Seller",
+    date: "2026-03-06",
+    status: "open",
+    votes: 22,
+    platform: "Multi-Platform",
+    comments: [
+      { author: "EUSeller", text: "This is desperately needed. IOSS compliance is confusing.", date: "2026-03-07" }
+    ]
+  },
+  {
+    id: "fr-005",
+    title: "Return Fraud Pattern Detector",
+    description: "Some buyers are clearly abusing return policies — buying items, using them, and returning. I need a tool that identifies suspicious return patterns per customer.",
+    author: "Amazon Seller",
+    date: "2026-03-08",
+    status: "popular",
+    votes: 53,
+    platform: "Amazon",
+    comments: [
+      { author: "FBASeller99", text: "I lose thousands a month to return abuse. This would be a game changer.", date: "2026-03-09" },
+      { author: "BrandProtector", text: "Would be great if it also flagged serial returners before they buy.", date: "2026-03-10" }
+    ]
+  },
+  {
+    id: "fr-006",
+    title: "Walmart Listing Quality Score Tracker",
+    description: "Walmart has a listing quality score but it's hard to monitor across hundreds of SKUs. Need a tool that tracks score changes and recommends fixes.",
+    author: "Walmart Seller",
+    date: "2026-03-09",
+    status: "open",
+    votes: 15,
+    platform: "Walmart",
+    comments: []
+  }
+];
+
+function getFeatureRequests(sortBy = 'votes') {
+  const sorted = [...FEATURE_REQUESTS];
+  if (sortBy === 'votes') sorted.sort((a, b) => b.votes - a.votes);
+  else if (sortBy === 'newest') sorted.sort((a, b) => new Date(b.date) - new Date(a.date));
+  return sorted;
+}

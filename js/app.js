@@ -221,21 +221,104 @@ async function submitTrialSignup(data) {
 }
 
 // ===== ADD TO CART HANDLER =====
-function handleAddToCart(slug) {
+function handleAddToCart(slug, redirect = false) {
   const product = getProductBySlug(slug);
   if (!product) return;
 
   if (Cart.hasItem(slug)) {
-    window.location.href = 'cart.html';
+    if (redirect) window.location.href = 'cart.html';
+    else Toast.show('Already in Cart', `${product.name} is already in your cart.`, 'info');
     return;
   }
 
   Cart.addItem(slug);
-  Toast.show('Added to Cart', `${product.name} — 14-day free trial`, 'success');
+  const count = Cart.count();
+  const discountMsg = count >= 2 ? ' — 50% off with 2+ tools!' : '';
+  Toast.show('Added to Cart', `${product.name}${discountMsg}`, 'success');
 
-  setTimeout(() => {
-    window.location.href = 'cart.html';
-  }, 800);
+  if (redirect) {
+    setTimeout(() => { window.location.href = 'cart.html'; }, 600);
+  }
+}
+
+function handleTryFree(slug) {
+  handleAddToCart(slug, true);
+}
+
+// ===== DISCOUNT LOGIC =====
+const Discount = {
+  THRESHOLD: 2,
+  PERCENT: 50,
+
+  applies(itemCount) {
+    return itemCount >= this.THRESHOLD;
+  },
+
+  label() {
+    return `${this.PERCENT}% off`;
+  },
+
+  calculate(price, itemCount) {
+    if (!this.applies(itemCount)) return price;
+    return price * (1 - this.PERCENT / 100);
+  }
+};
+
+// ===== FEATURE REQUEST SYSTEM =====
+const Votes = {
+  KEY: 'selleractions_votes',
+
+  getAll() {
+    try { return JSON.parse(localStorage.getItem(this.KEY)) || {}; } catch { return {}; }
+  },
+
+  hasVoted(id) {
+    return !!this.getAll()[id];
+  },
+
+  toggle(id) {
+    const data = this.getAll();
+    if (data[id]) { delete data[id]; } else { data[id] = Date.now(); }
+    localStorage.setItem(this.KEY, JSON.stringify(data));
+    return !data[id] ? false : true;
+  },
+
+  localCount(id) {
+    return this.hasVoted(id) ? 1 : 0;
+  }
+};
+
+async function submitFeatureRequest(data) {
+  if (!FORMSPREE_ENDPOINT || FORMSPREE_ENDPOINT.includes('YOUR_FORM_ID')) return;
+  try {
+    await fetch(FORMSPREE_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ _subject: `Feature Request: ${data.title}`, type: 'feature_request', ...data, timestamp: new Date().toISOString() })
+    });
+  } catch (e) { console.warn('Feature request submission failed:', e); }
+}
+
+async function submitVote(requestId, title) {
+  if (!FORMSPREE_ENDPOINT || FORMSPREE_ENDPOINT.includes('YOUR_FORM_ID')) return;
+  try {
+    await fetch(FORMSPREE_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ _subject: `Vote: ${title}`, type: 'vote', request_id: requestId, timestamp: new Date().toISOString() })
+    });
+  } catch (e) { console.warn('Vote submission failed:', e); }
+}
+
+async function submitComment(requestId, title, comment, author) {
+  if (!FORMSPREE_ENDPOINT || FORMSPREE_ENDPOINT.includes('YOUR_FORM_ID')) return;
+  try {
+    await fetch(FORMSPREE_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ _subject: `Comment on: ${title}`, type: 'comment', request_id: requestId, author, comment, timestamp: new Date().toISOString() })
+    });
+  } catch (e) { console.warn('Comment submission failed:', e); }
 }
 
 // ===== SHARED COMPONENTS =====
@@ -277,10 +360,27 @@ function renderToolCard(product) {
     ? '<div class="live-indicator"><span class="dot"></span> LIVE</div>'
     : '';
 
-  const ctaText = product.live ? 'Start Free Trial' : 'Notify Me';
-  const ctaAction = product.live
-    ? `onclick="event.preventDefault(); handleAddToCart('${product.slug}')" href="#"`
-    : `onclick="event.preventDefault(); Modal.showNotifyForm(getProductBySlug('${product.slug}'))" href="#"`;
+  const inCart = Cart.hasItem(product.slug);
+
+  let footerHtml;
+  if (product.live) {
+    footerHtml = `
+      <a class="btn-card-cart${inCart ? ' in-cart' : ''}" href="#" onclick="event.preventDefault(); event.stopPropagation(); handleAddToCart('${product.slug}')">
+        ${inCart ? '&#10003; In Cart' : '+ Add to Cart'}
+      </a>
+      <a class="btn-card-trial" href="#" onclick="event.preventDefault(); event.stopPropagation(); handleTryFree('${product.slug}')">
+        14 Days Free &rarr;
+      </a>
+    `;
+  } else {
+    footerHtml = `
+      <div class="tool-score">
+        <span>Score ${product.score.toFixed(1)}</span>
+        <div class="score-bar"><div class="score-fill" style="width:${(product.score / 10) * 100}%"></div></div>
+      </div>
+      <a class="tool-cta-link" href="#" onclick="event.preventDefault(); event.stopPropagation(); Modal.showNotifyForm(getProductBySlug('${product.slug}'))">Notify Me &rarr;</a>
+    `;
+  }
 
   return `
     <article class="tool-card">
@@ -299,13 +399,7 @@ function renderToolCard(product) {
           ${product.platforms.map(p => `<span class="tool-tag ${getPlatformClass(p)}">${getPlatformName(p)}</span>`).join('')}
         </div>
       </a>
-      <div class="tool-card-footer">
-        <div class="tool-score">
-          <span>Score ${product.score.toFixed(1)}</span>
-          <div class="score-bar"><div class="score-fill" style="width:${(product.score / 10) * 100}%"></div></div>
-        </div>
-        <a class="tool-cta-link" ${ctaAction}>${ctaText} &rarr;</a>
-      </div>
+      <div class="tool-card-footer">${footerHtml}</div>
     </article>
   `;
 }
@@ -339,14 +433,14 @@ function renderNav(activePage) {
         <a href="index.html" class="${activePage === 'home' ? 'active' : ''}">Home</a>
         <a href="index.html#tools" class="${activePage === 'tools' ? 'active' : ''}">Tools</a>
         <a href="index.html#categories" class="${activePage === 'categories' ? 'active' : ''}">Categories</a>
-        <a href="index.html#how" class="${activePage === 'how' ? 'active' : ''}">How It Works</a>
+        <a href="requests.html" class="${activePage === 'requests' ? 'active' : ''}">Requests</a>
       </div>
       <div class="nav-right">
         <a href="cart.html" class="nav-cart">
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/></svg>
           <span class="cart-badge" id="cartBadge">0</span>
         </a>
-        <a href="cart.html" class="btn-nav">Start Free Trial</a>
+        <a href="cart.html" class="btn-nav">14 Days Free</a>
       </div>
       <button class="mobile-toggle" onclick="toggleMobileMenu()" aria-label="Toggle menu">
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
@@ -367,7 +461,7 @@ function toggleMobileMenu() {
       <a href="index.html">Home</a>
       <a href="index.html#tools">All Tools</a>
       <a href="index.html#categories">Categories</a>
-      <a href="index.html#how">How It Works</a>
+      <a href="requests.html">Feature Requests</a>
       <a href="cart.html">Cart</a>
     `;
     document.body.appendChild(menu);
@@ -402,6 +496,7 @@ function renderFooter() {
           <h4>Product</h4>
           <a href="index.html#tools">All Tools</a>
           <a href="index.html#categories">Browse Categories</a>
+          <a href="requests.html">Feature Requests</a>
           <a href="cart.html">Cart</a>
         </div>
         <div class="footer-col">
@@ -427,7 +522,31 @@ const ARROW_ICON = `<svg fill="none" stroke="currentColor" stroke-width="2" view
 const CHEVRON_RIGHT = `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>`;
 const TARGET_ICON = `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>`;
 
+// ===== FLOATING REQUEST BUTTON =====
+function renderFloatingRequestBtn() {
+  if (document.getElementById('floatingRequest')) return;
+  const btn = document.createElement('a');
+  btn.id = 'floatingRequest';
+  btn.href = 'requests.html';
+  btn.className = 'floating-request-btn';
+  btn.innerHTML = `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg> Request a Feature`;
+  document.body.appendChild(btn);
+}
+
+// ===== DISCOUNT BANNER =====
+function renderDiscountBanner() {
+  if (document.getElementById('discountBanner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'discountBanner';
+  banner.className = 'discount-banner';
+  banner.innerHTML = `<div class="container" style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;"><span class="discount-badge">BUNDLE DEAL</span> <span>Add 2 or more tools and get <strong>50% off</strong> after your free trial!</span> <a href="index.html#tools" class="discount-link">Browse Tools &rarr;</a></div>`;
+  const nav = document.querySelector('.nav');
+  if (nav) nav.after(banner);
+}
+
 // ===== PAGE INIT =====
 document.addEventListener('DOMContentLoaded', () => {
   Cart.updateBadge();
+  renderFloatingRequestBtn();
+  renderDiscountBanner();
 });

@@ -88,8 +88,13 @@
       return;
     }
 
+    const hasDiscount = Discount.applies(items.length);
+
     const itemsHtml = items.map(p => {
       const cat = CATEGORIES[p.cat];
+      const priceDisplay = hasDiscount
+        ? `<span class="price-original">${p.priceLabel}</span><span class="price-discounted">$${Discount.calculate(p.price, items.length).toFixed(2)}/mo</span><span class="discount-tag">-${Discount.PERCENT}%</span>`
+        : `${p.priceLabel}`;
       return `
         <div class="cart-item">
           <div class="cart-item-icon" style="background:${getIconGradient(p.cat)}">${cat?.icon || '🔧'}</div>
@@ -97,7 +102,7 @@
             <div class="cart-item-name">${p.name}</div>
             <div class="cart-item-cat">${cat?.name || p.cat} · ${p.platforms.map(pl => getPlatformName(pl)).join(', ')}</div>
           </div>
-          <div class="cart-item-price">${p.priceLabel}</div>
+          <div class="cart-item-price">${priceDisplay}</div>
           <button class="cart-item-remove" onclick="removeFromCart('${p.slug}')" title="Remove">
             <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
@@ -105,7 +110,22 @@
       `;
     }).join('');
 
+    const discountBannerHtml = hasDiscount
+      ? `<div style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.25);border-radius:10px;padding:14px 20px;margin-bottom:16px;display:flex;align-items:center;gap:10px;">
+          <span class="discount-badge">BUNDLE DEAL</span>
+          <span style="font-size:0.88rem;color:var(--yellow);font-weight:600;">${Discount.PERCENT}% off applied — you have ${items.length} tools in your cart!</span>
+        </div>`
+      : (items.length === 1
+        ? `<div style="background:var(--accent-glow);border:1px solid rgba(0,194,209,0.15);border-radius:10px;padding:14px 20px;margin-bottom:16px;font-size:0.88rem;color:var(--accent);">
+            Add 1 more tool to unlock <strong>50% off</strong> on all tools after your free trial!
+          </div>`
+        : '');
+
+    const totalOriginal = items.reduce((sum, p) => sum + p.price, 0);
+    const totalAfterDiscount = hasDiscount ? totalOriginal * (1 - Discount.PERCENT / 100) : totalOriginal;
+
     cartContent.innerHTML = `
+      ${discountBannerHtml}
       ${itemsHtml}
       <div class="cart-summary">
         <div class="cart-summary-row">
@@ -114,18 +134,24 @@
         </div>
         <div class="cart-summary-row">
           <span class="label">Trial period</span>
-          <span class="value">14 days free</span>
+          <span class="value" style="color:var(--accent);">14 days free</span>
         </div>
+        ${hasDiscount ? `<div class="cart-summary-row">
+          <span class="label">Bundle discount</span>
+          <span class="value" style="color:var(--yellow);">-${Discount.PERCENT}%</span>
+        </div>` : ''}
         <div class="cart-summary-row total">
           <span class="label">After trial</span>
-          <span class="value" style="color:var(--green);">From ${items.reduce((min, p) => Math.min(min, p.price), Infinity).toFixed(2)}/mo</span>
+          <span class="value" style="color:var(--green);">
+            ${hasDiscount ? `<span class="price-original">$${totalOriginal.toFixed(2)}/mo</span> ` : ''}$${totalAfterDiscount.toFixed(2)}/mo
+          </span>
         </div>
         <div class="cart-trial-note">
           All tools come with a 14-day free trial. No credit card required to start.
         </div>
       </div>
       <div style="display:flex; gap:12px; margin-top:24px; justify-content:space-between;">
-        <a href="index.html#tools" class="btn-ghost">Continue Browsing</a>
+        <a href="index.html#tools" class="btn-ghost">${items.length < 2 ? 'Add More for 50% Off' : 'Continue Browsing'}</a>
         <button class="btn-primary" onclick="setStep(2)">Connect Your Store &rarr;</button>
       </div>
     `;

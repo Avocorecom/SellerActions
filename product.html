@@ -96,16 +96,21 @@
 
     const cat = CATEGORIES[product.cat];
     const isInCart = Cart.hasItem(product.slug);
-    const primaryBtnText = product.live
-      ? (isInCart ? 'Go to Cart' : 'Start 14-Day Free Trial')
-      : 'Get Notified When Available';
-    const primaryBtnAction = product.live
-      ? (isInCart
-          ? `window.location.href='cart.html'`
-          : `handleAddToCart('${product.slug}')`)
-      : `Modal.showNotifyForm(getProductBySlug('${product.slug}'))`;
 
-    // Product hero
+    let sidebarButtons;
+    if (product.live) {
+      if (isInCart) {
+        sidebarButtons = `<a class="btn-success btn-full" href="cart.html">&#10003; In Cart — Go to Checkout</a>`;
+      } else {
+        sidebarButtons = `
+          <button class="btn-primary btn-full" onclick="handleTryFree('${product.slug}')">Try 14 Days Free</button>
+          <button class="btn-secondary btn-full btn-sm" onclick="handleAddToCart('${product.slug}')">+ Add to Cart</button>
+        `;
+      }
+    } else {
+      sidebarButtons = `<button class="btn-primary btn-full" onclick="Modal.showNotifyForm(getProductBySlug('${product.slug}'))">Get Notified When Available</button>`;
+    }
+
     document.getElementById('productContent').innerHTML = `
       <div class="product-hero-inner">
         <div>
@@ -132,9 +137,11 @@
         </div>
         <div class="product-sidebar">
           <div class="product-sidebar-price">${product.priceLabel}</div>
-          <div class="product-sidebar-trial">14-day free trial included</div>
-          <button class="btn-primary btn-full" onclick="${primaryBtnAction}">${primaryBtnText}</button>
-          ${product.live ? `<button class="btn-secondary btn-full btn-sm" onclick="window.location.href='category.html?cat=${product.cat}'">View Similar Tools</button>` : ''}
+          <div class="product-sidebar-trial">14-day free trial · No credit card required</div>
+          ${sidebarButtons}
+          <div style="text-align:center;margin-top:12px;padding:10px;background:rgba(251,191,36,0.08);border-radius:8px;font-size:0.8rem;color:var(--yellow);">
+            Add 2+ tools → <strong>50% off</strong> after trial
+          </div>
           <ul class="product-sidebar-features">
             <li>${CHECK_ICON} <span>14-day free trial — no credit card</span></li>
             <li>${CHECK_ICON} <span>Cancel anytime, no contracts</span></li>
