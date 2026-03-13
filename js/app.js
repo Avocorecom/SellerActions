@@ -3,7 +3,7 @@
 // ===== CONFIG =====
 // Create a free form at https://formspree.io and paste your endpoint below.
 // Notify Me submissions AND trial signups are sent here.
-const FORMSPREE_ENDPOINT = 'https://formspree.io/f/xwpkgkqz';
+const FORMSPREE_ENDPOINT = 'https://formspree.io/f/mgonybaq';
 
 // ===== CART SYSTEM =====
 const Cart = {
