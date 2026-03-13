@@ -96,6 +96,22 @@
 
 <footer class="footer" id="mainFooter"></footer>
 
+<!-- Email Prompt Modal -->
+<div class="email-prompt-overlay" id="emailPromptOverlay">
+  <div class="email-prompt">
+    <div class="email-prompt-icon">
+      <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 4l-10 8L2 4"/></svg>
+    </div>
+    <h3 id="emailPromptTitle">Stay in the loop</h3>
+    <p id="emailPromptDesc">Enter your email to get updates when this feature progresses. Totally optional.</p>
+    <input type="email" id="emailPromptInput" placeholder="you@example.com">
+    <div class="email-prompt-actions">
+      <button class="btn-ghost" id="emailPromptSkip">Skip</button>
+      <button class="btn-primary" id="emailPromptContinue">Continue</button>
+    </div>
+  </div>
+</div>
+
 <script src="js/data.js"></script>
 <script src="js/db.js"></script>
 <script src="js/app.js"></script>
@@ -105,6 +121,57 @@
 
   let currentSort = 'votes';
 
+  // ===== EMAIL PROMPT SYSTEM =====
+  const EMAIL_KEY = 'sa_user_email';
+
+  function getSavedEmail() {
+    return localStorage.getItem(EMAIL_KEY) || '';
+  }
+
+  function saveEmail(email) {
+    if (email) localStorage.setItem(EMAIL_KEY, email);
+  }
+
+  function promptEmail(title, desc) {
+    return new Promise(resolve => {
+      const saved = getSavedEmail();
+      if (saved) return resolve(saved);
+
+      const overlay = document.getElementById('emailPromptOverlay');
+      const input = document.getElementById('emailPromptInput');
+      const skipBtn = document.getElementById('emailPromptSkip');
+      const continueBtn = document.getElementById('emailPromptContinue');
+
+      if (title) document.getElementById('emailPromptTitle').textContent = title;
+      if (desc) document.getElementById('emailPromptDesc').textContent = desc;
+
+      input.value = '';
+      overlay.classList.add('open');
+      setTimeout(() => input.focus(), 200);
+
+      function cleanup() {
+        overlay.classList.remove('open');
+        skipBtn.removeEventListener('click', onSkip);
+        continueBtn.removeEventListener('click', onContinue);
+        input.removeEventListener('keydown', onKey);
+      }
+
+      function onSkip() { cleanup(); resolve(''); }
+      function onContinue() {
+        const email = input.value.trim();
+        if (email && email.includes('@')) saveEmail(email);
+        cleanup();
+        resolve(email);
+      }
+      function onKey(e) { if (e.key === 'Enter') onContinue(); if (e.key === 'Escape') onSkip(); }
+
+      skipBtn.addEventListener('click', onSkip);
+      continueBtn.addEventListener('click', onContinue);
+      input.addEventListener('keydown', onKey);
+    });
+  }
+
+  // ===== RENDER =====
   async function renderRequests(sortBy) {
     currentSort = sortBy || currentSort;
     const grid = document.getElementById('requestGrid');
@@ -172,11 +239,21 @@
     renderRequests(sortBy);
   }
 
+  // ===== VOTE WITH EMAIL PROMPT =====
   async function handleVote(id, title, btn) {
-    const isNowVoted = await RequestsDB.vote(id);
+    const alreadyVoted = RequestsDB.hasVoted(id);
+
+    if (!alreadyVoted) {
+      const email = await promptEmail(
+        'Your vote counts!',
+        'Leave your email to get notified when this feature ships. You can skip if you prefer.'
+      );
+      var userEmail = email;
+    }
+
+    const isNowVoted = await RequestsDB.vote(id, userEmail || '');
     btn.classList.toggle('voted', isNowVoted);
 
-    // Re-fetch to get accurate count
     const requests = await RequestsDB.getAll(currentSort);
     const req = requests.find(r => r.id === id);
     if (req) document.getElementById('votes-' + id).textContent = req.votes;
@@ -188,20 +265,28 @@
     }
   }
 
+  // ===== COMMENT WITH EMAIL PROMPT =====
   async function handleComment(id, title) {
     const input = document.getElementById('comment-input-' + id);
     const text = input?.value?.trim();
     if (!text) return;
 
+    const email = await promptEmail(
+      'Add your email',
+      'Optional: leave your email so others can identify your comments and we can follow up.'
+    );
+
+    const authorName = email ? email.split('@')[0] : 'Anonymous';
+
     input.value = '';
-    const comment = await RequestsDB.addComment(id, 'Anonymous', text);
+    const comment = await RequestsDB.addComment(id, authorName, text, email);
 
     const commentsDiv = document.getElementById('comments-' + id);
     commentsDiv.style.display = 'block';
     const dateStr = (comment.created_at || new Date().toISOString()).slice(0, 10);
     commentsDiv.innerHTML += `
       <div class="comment-item">
-        <span class="comment-author">${comment.author || 'You'}</span>
+        <span class="comment-author">${comment.author || authorName}</span>
         <span class="comment-date">${dateStr}</span>
         <div class="comment-text">${comment.text || text}</div>
       </div>
@@ -210,6 +295,7 @@
     Toast.show('Comment Posted', 'Your comment has been saved.', 'success');
   }
 
+  // ===== SUBMIT REQUEST =====
   async function handleRequestSubmit() {
     const title = document.getElementById('reqTitle')?.value?.trim();
     const desc = document.getElementById('reqDesc')?.value?.trim();
@@ -219,6 +305,8 @@
     if (!title) { Toast.show('Title Required', 'Please enter a name for your tool idea.', 'info'); return; }
     if (!desc) { Toast.show('Description Required', 'Please describe the problem this tool would solve.', 'info'); return; }
     if (!email || !email.includes('@')) { Toast.show('Email Required', 'Please enter a valid email so we can follow up.', 'info'); return; }
+
+    saveEmail(email);
 
     const btn = document.querySelector('.request-form .btn-primary');
     if (btn) { btn.disabled = true; btn.textContent = 'Submitting...'; }

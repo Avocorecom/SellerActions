@@ -113,8 +113,8 @@ const RequestsDB = {
     }
   },
 
-  // Vote on a request
-  async vote(requestId) {
+  // Vote on a request (email is optional, collected via prompt)
+  async vote(requestId, email) {
     const wasVoted = this.hasVoted(requestId);
     const nowVoted = !wasVoted;
     this.saveLocalVote(requestId, nowVoted);
@@ -122,14 +122,20 @@ const RequestsDB = {
     if (DB_ENABLED) {
       try {
         if (nowVoted) {
-          await db.insert('votes', { request_id: requestId, fingerprint: this.getFingerprint() });
+          const voteData = { request_id: requestId, fingerprint: this.getFingerprint() };
+          if (email) voteData.email = email;
+          try {
+            await db.insert('votes', voteData);
+          } catch {
+            delete voteData.email;
+            await db.insert('votes', voteData);
+          }
         } else {
           const fp = this.getFingerprint();
           await fetch(`${SUPABASE_URL}/rest/v1/votes?request_id=eq.${requestId}&fingerprint=eq.${fp}`, {
             method: 'DELETE', headers: db.headers()
           });
         }
-        // Update vote count on the request
         const [req] = await db.query('feature_requests', `id=eq.${requestId}`);
         if (req) {
           const voteRows = await db.query('votes', `request_id=eq.${requestId}&select=id`);
@@ -145,8 +151,8 @@ const RequestsDB = {
     return nowVoted;
   },
 
-  // Add a comment
-  async addComment(requestId, author, text) {
+  // Add a comment (email is optional, collected via prompt)
+  async addComment(requestId, author, text, email) {
     const comment = {
       request_id: requestId,
       author: author || 'Anonymous',
@@ -158,12 +164,16 @@ const RequestsDB = {
 
     if (DB_ENABLED) {
       try {
-        const [inserted] = await db.insert('comments', {
-          request_id: requestId,
-          author: comment.author,
-          text: comment.text
-        });
-        return inserted || comment;
+        const insertData = { request_id: requestId, author: comment.author, text: comment.text };
+        if (email) insertData.email = email;
+        try {
+          const [inserted] = await db.insert('comments', insertData);
+          return inserted || comment;
+        } catch {
+          delete insertData.email;
+          const [inserted] = await db.insert('comments', insertData);
+          return inserted || comment;
+        }
       } catch (e) {
         console.warn('Comment sync failed:', e);
       }

@@ -18,6 +18,7 @@ create table votes (
   id uuid default gen_random_uuid() primary key,
   request_id uuid references feature_requests(id) on delete cascade,
   fingerprint text not null,
+  email text,
   created_at timestamptz default now(),
   unique(request_id, fingerprint)
 );
@@ -28,6 +29,7 @@ create table comments (
   request_id uuid references feature_requests(id) on delete cascade,
   author text default 'Anonymous',
   text text not null,
+  email text,
   created_at timestamptz default now()
 );
 
