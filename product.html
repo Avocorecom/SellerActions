@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SellerActions — Tool Details</title>
+  <meta name="description" content="Micro SaaS tool for e-commerce sellers. Start your 14-day free trial.">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="nav" id="mainNav"></nav>
+
+<section class="product-hero" id="productHero">
+  <div class="container" id="productContent">
+    <!-- Populated by JS -->
+  </div>
+</section>
+
+<section class="section" id="productFeatures"></section>
+<section class="section section-bordered" id="productHow"></section>
+<section class="section section-bordered" id="productUseCases"></section>
+
+<!-- Related tools -->
+<section class="section section-bordered" id="relatedSection">
+  <div class="container">
+    <div class="section-header">
+      <h2>Related Tools</h2>
+      <p>Other tools in this category that might help your business.</p>
+    </div>
+    <div class="tools-grid" id="relatedGrid"></div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <div class="container">
+    <div class="cta-box">
+      <h2>Ready to Protect Your Margins?</h2>
+      <p>Start your 14-day free trial. No credit card required. Cancel anytime.</p>
+      <button class="btn-primary" id="ctaButton">Start Free Trial &rarr;</button>
+    </div>
+  </div>
+</section>
+
+<footer class="footer" id="mainFooter"></footer>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+  renderNav('tools');
+  renderFooter();
+
+  const params = new URLSearchParams(window.location.search);
+  const slug = params.get('slug');
+  const product = slug ? getProductBySlug(slug) : null;
+
+  if (!product) {
+    document.getElementById('productContent').innerHTML = `
+      <div style="text-align:center; padding: 80px 0;">
+        <h2>Tool Not Found</h2>
+        <p style="color:var(--text-secondary); margin: 16px 0 32px;">The tool you're looking for doesn't exist or has been removed.</p>
+        <a href="index.html#tools" class="btn-primary">Browse All Tools</a>
+      </div>
+    `;
+    document.getElementById('productFeatures').style.display = 'none';
+    document.getElementById('productHow').style.display = 'none';
+    document.getElementById('productUseCases').style.display = 'none';
+    document.getElementById('relatedSection').style.display = 'none';
+  } else {
+    // Update page meta
+    document.title = `${product.name} — SellerActions | Micro SaaS for E-Commerce Sellers`;
+    document.querySelector('meta[name="description"]').content = product.longDesc.substring(0, 160);
+
+    // Structured data
+    const ldJson = {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": product.name,
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web",
+      "description": product.shortDesc,
+      "offers": {
+        "@type": "Offer",
+        "price": product.price,
+        "priceCurrency": "USD",
+        "availability": product.live ? "https://schema.org/InStock" : "https://schema.org/PreOrder"
+      }
+    };
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.textContent = JSON.stringify(ldJson);
+    document.head.appendChild(script);
+
+    const cat = CATEGORIES[product.cat];
+    const isInCart = Cart.hasItem(product.slug);
+    const primaryBtnText = product.live
+      ? (isInCart ? 'Go to Cart' : 'Start 14-Day Free Trial')
+      : 'Get Notified When Available';
+    const primaryBtnAction = product.live
+      ? (isInCart
+          ? `window.location.href='cart.html'`
+          : `handleAddToCart('${product.slug}')`)
+      : `Modal.showNotifyForm(getProductBySlug('${product.slug}'))`;
+
+    // Product hero
+    document.getElementById('productContent').innerHTML = `
+      <div class="product-hero-inner">
+        <div>
+          <div class="product-breadcrumb">
+            <a href="index.html">Home</a>
+            ${CHEVRON_RIGHT}
+            <a href="category.html?cat=${product.cat}">${cat.name}</a>
+            ${CHEVRON_RIGHT}
+            <span>${product.name}</span>
+          </div>
+          <h1 class="product-title">${product.name}</h1>
+          <div class="product-meta">
+            ${product.platforms.map(p => `<span class="tool-tag ${getPlatformClass(p)}">${getPlatformName(p)}</span>`).join('')}
+            ${product.live ? '<span class="live-indicator"><span class="dot"></span> LIVE</span>' : '<span class="trial-badge">COMING SOON</span>'}
+            <span class="trial-badge">14-day free trial</span>
+          </div>
+          <p class="product-desc">${product.longDesc}</p>
+          <div class="tool-score" style="font-size: 0.88rem;">
+            <span>Seller Impact Score: <strong>${product.score.toFixed(1)}</strong>/10</span>
+            <div class="score-bar" style="width:80px;height:6px;">
+              <div class="score-fill" style="width:${(product.score / 10) * 100}%"></div>
+            </div>
+          </div>
+        </div>
+        <div class="product-sidebar">
+          <div class="product-sidebar-price">${product.priceLabel}</div>
+          <div class="product-sidebar-trial">14-day free trial included</div>
+          <button class="btn-primary btn-full" onclick="${primaryBtnAction}">${primaryBtnText}</button>
+          ${product.live ? `<button class="btn-secondary btn-full btn-sm" onclick="window.location.href='category.html?cat=${product.cat}'">View Similar Tools</button>` : ''}
+          <ul class="product-sidebar-features">
+            <li>${CHECK_ICON} <span>14-day free trial — no credit card</span></li>
+            <li>${CHECK_ICON} <span>Cancel anytime, no contracts</span></li>
+            <li>${CHECK_ICON} <span>Works with ${product.platforms.map(p => getPlatformName(p)).join(', ')}</span></li>
+            <li>${CHECK_ICON} <span>Setup in under 2 minutes</span></li>
+            <li>${CHECK_ICON} <span>Email & chat support included</span></li>
+          </ul>
+        </div>
+      </div>
+    `;
+
+    // Features section
+    if (product.features && product.features.length > 0) {
+      document.getElementById('productFeatures').innerHTML = `
+        <div class="container">
+          <div class="section-header">
+            <h2>Key Features</h2>
+            <p>Everything ${product.name} does to protect and grow your business.</p>
+          </div>
+          <div class="product-features-grid">
+            ${product.features.map(f => `
+              <div class="feature-card">
+                <h4>${CHECK_ICON} ${f.title}</h4>
+                <p>${f.desc}</p>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // How it works
+    if (product.howItWorks && product.howItWorks.length > 0) {
+      document.getElementById('productHow').innerHTML = `
+        <div class="container">
+          <div class="section-header">
+            <h2>How It Works</h2>
+            <p>Get started in 3 simple steps.</p>
+          </div>
+          <div class="how-steps">
+            ${product.howItWorks.map((h, i) => `
+              <div class="how-step">
+                <div class="how-step-num">${i + 1}</div>
+                <h3>${h.step}</h3>
+                <p>${h.desc}</p>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // Use cases
+    if (product.useCases && product.useCases.length > 0) {
+      document.getElementById('productUseCases').innerHTML = `
+        <div class="container">
+          <div class="section-header">
+            <h2>Who Is This For?</h2>
+            <p>Common use cases for ${product.name}.</p>
+          </div>
+          <div class="use-case-list" style="max-width:700px; margin:0 auto;">
+            ${product.useCases.map(uc => `
+              <div class="use-case-item">${TARGET_ICON} <span>${uc}</span></div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // Related tools
+    const related = getProductsByCategory(product.cat)
+      .filter(p => p.slug !== product.slug)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3);
+
+    if (related.length > 0) {
+      document.getElementById('relatedGrid').innerHTML = related.map(renderToolCard).join('');
+    } else {
+      document.getElementById('relatedSection').style.display = 'none';
+    }
+
+    // CTA button
+    document.getElementById('ctaButton').onclick = () => {
+      if (product.live) {
+        handleAddToCart(product.slug);
+      } else {
+        Modal.showNotifyForm(product);
+      }
+    };
+  }
+</script>
+</body>
+</html>

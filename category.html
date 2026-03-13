@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SellerActions — Category</title>
+  <meta name="description" content="Browse micro-SaaS tools for e-commerce sellers. Find the right tool for your exact pain point.">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="nav" id="mainNav"></nav>
+
+<section class="hero" style="padding-bottom: 40px;">
+  <div class="container">
+    <div class="product-breadcrumb fade-up">
+      <a href="index.html">Home</a>
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      <a href="index.html#categories">Categories</a>
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      <span id="breadcrumbCat">Category</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:16px; margin-bottom:16px;" class="fade-up delay-1">
+      <div id="catIcon" style="font-size:2.2rem;"></div>
+      <h1 id="catTitle" style="font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight:700; letter-spacing:-0.02em;"></h1>
+    </div>
+    <p id="catDesc" class="fade-up delay-2" style="font-size:1.05rem; color:var(--text-secondary); max-width:640px; line-height:1.7;"></p>
+    <p id="catCount" class="fade-up delay-3" style="margin-top:16px; font-size:0.88rem; color:var(--text-muted); font-family:'JetBrains Mono', monospace;"></p>
+  </div>
+</section>
+
+<section class="section" style="padding-top:40px;">
+  <div class="container">
+    <div class="search-wrap">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="catSearchInput" placeholder="Search within this category…" aria-label="Search category tools">
+    </div>
+
+    <div class="filter-bar" id="catFilterBar">
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="live">Live Now</button>
+      <button class="filter-btn" data-filter="coming">Coming Soon</button>
+    </div>
+
+    <div class="tools-grid" id="catToolsGrid"></div>
+    <div class="no-results" id="catNoResults">
+      <p>No tools match your search in this category.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Other Categories -->
+<section class="section section-bordered">
+  <div class="container">
+    <div class="section-header">
+      <h2>Explore Other Categories</h2>
+      <p>Find tools across all areas of your e-commerce business.</p>
+    </div>
+    <div class="category-grid" id="otherCats"></div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <div class="container">
+    <div class="cta-box">
+      <h2>Find the Right Tool for Your Business</h2>
+      <p>Every tool comes with a 14-day free trial. No credit card required.</p>
+      <a href="index.html#tools" class="btn-primary">Browse All Tools &rarr;</a>
+    </div>
+  </div>
+</section>
+
+<footer class="footer" id="mainFooter"></footer>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+  renderNav('categories');
+  renderFooter();
+
+  const params = new URLSearchParams(window.location.search);
+  const catSlug = params.get('cat');
+  const category = catSlug ? CATEGORIES[catSlug] : null;
+
+  if (!category) {
+    document.getElementById('catTitle').textContent = 'All Categories';
+    document.getElementById('catDesc').textContent = 'Browse all tool categories for e-commerce sellers.';
+    document.getElementById('catIcon').textContent = '🔧';
+    document.getElementById('breadcrumbCat').textContent = 'All';
+    document.title = 'All Categories — SellerActions';
+
+    const allCats = Object.keys(CATEGORIES).map(renderCategoryCard).join('');
+    document.querySelector('.tools-grid')?.closest('.section')?.remove();
+    document.querySelector('.search-wrap')?.closest('.section')?.remove();
+  } else {
+    const products = getProductsByCategory(catSlug);
+
+    document.title = `${category.name} Tools — SellerActions | Micro SaaS for E-Commerce Sellers`;
+    document.querySelector('meta[name="description"]').content = category.longDesc.substring(0, 160);
+    document.getElementById('catIcon').textContent = category.icon;
+    document.getElementById('catTitle').textContent = category.name;
+    document.getElementById('catDesc').textContent = category.longDesc;
+    document.getElementById('breadcrumbCat').textContent = category.name;
+
+    const liveInCat = products.filter(p => p.live).length;
+    const comingInCat = products.filter(p => !p.live).length;
+    document.getElementById('catCount').textContent =
+      `${products.length} tools — ${liveInCat} live, ${comingInCat} coming soon`;
+
+    // Render & filter
+    let catFilter = 'all';
+    const catGrid = document.getElementById('catToolsGrid');
+    const catNoResults = document.getElementById('catNoResults');
+    const catSearch = document.getElementById('catSearchInput');
+
+    function renderCatTools() {
+      const query = catSearch.value.toLowerCase().trim();
+      let filtered = products.filter(p => {
+        const statusMatch = catFilter === 'all' ||
+          (catFilter === 'live' ? p.live : !p.live);
+        const searchMatch = !query ||
+          p.name.toLowerCase().includes(query) ||
+          p.shortDesc.toLowerCase().includes(query);
+        return statusMatch && searchMatch;
+      });
+
+      filtered.sort((a, b) => {
+        if (a.featured && !b.featured) return -1;
+        if (!a.featured && b.featured) return 1;
+        if (a.live && !b.live) return -1;
+        if (!a.live && b.live) return 1;
+        return b.score - a.score;
+      });
+
+      if (filtered.length === 0) {
+        catGrid.innerHTML = '';
+        catNoResults.style.display = 'block';
+      } else {
+        catNoResults.style.display = 'none';
+        catGrid.innerHTML = filtered.map(renderToolCard).join('');
+      }
+    }
+
+    document.querySelectorAll('#catFilterBar .filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#catFilterBar .filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        catFilter = btn.dataset.filter;
+        renderCatTools();
+      });
+    });
+
+    catSearch.addEventListener('input', renderCatTools);
+    renderCatTools();
+
+    // Other categories
+    const otherCats = Object.keys(CATEGORIES)
+      .filter(k => k !== catSlug)
+      .slice(0, 6)
+      .map(renderCategoryCard)
+      .join('');
+    document.getElementById('otherCats').innerHTML = otherCats;
+  }
+</script>
+</body>
+</html>

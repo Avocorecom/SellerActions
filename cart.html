@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cart & Store Integration — SellerActions</title>
+  <meta name="description" content="Connect your e-commerce store and start your 14-day free trial with SellerActions micro-SaaS tools.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="nav" id="mainNav"></nav>
+
+<section class="cart-page">
+  <div class="container">
+    <div class="section-header">
+      <h2 id="cartPageTitle">Your Cart</h2>
+      <p id="cartPageDesc">Review your selected tools and connect your store to start the 14-day free trial.</p>
+    </div>
+
+    <!-- Steps indicator -->
+    <div class="cart-steps" id="cartSteps">
+      <div class="cart-step active" data-step="1">
+        <div class="cart-step-num">1</div>
+        <span class="cart-step-label">Review Cart</span>
+      </div>
+      <div class="cart-step" data-step="2">
+        <div class="cart-step-num">2</div>
+        <span class="cart-step-label">Connect Store</span>
+      </div>
+      <div class="cart-step" data-step="3">
+        <div class="cart-step-num">3</div>
+        <span class="cart-step-label">Start Trial</span>
+      </div>
+    </div>
+
+    <!-- Cart content container -->
+    <div class="cart-content" id="cartContent"></div>
+  </div>
+</section>
+
+<footer class="footer" id="mainFooter"></footer>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+  renderNav('');
+  renderFooter();
+
+  let currentStep = 1;
+  let selectedStore = null;
+  const cartContent = document.getElementById('cartContent');
+
+  function setStep(step) {
+    currentStep = step;
+    document.querySelectorAll('.cart-step').forEach(el => {
+      const s = parseInt(el.dataset.step);
+      el.classList.remove('active', 'completed');
+      if (s === step) el.classList.add('active');
+      if (s < step) el.classList.add('completed');
+    });
+    renderStep();
+  }
+
+  function renderStep() {
+    if (currentStep === 1) renderCartStep();
+    else if (currentStep === 2) renderIntegrationStep();
+    else if (currentStep === 3) renderSuccessStep();
+  }
+
+  // ===== STEP 1: CART REVIEW =====
+  function renderCartStep() {
+    const items = Cart.getProducts();
+
+    if (items.length === 0) {
+      cartContent.innerHTML = `
+        <div class="cart-empty">
+          <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/>
+          </svg>
+          <h3>Your cart is empty</h3>
+          <p>Browse our tools and add the ones you need. Every tool includes a 14-day free trial.</p>
+          <a href="index.html#tools" class="btn-primary">Browse Tools</a>
+        </div>
+      `;
+      return;
+    }
+
+    const itemsHtml = items.map(p => {
+      const cat = CATEGORIES[p.cat];
+      return `
+        <div class="cart-item">
+          <div class="cart-item-icon" style="background:${getIconGradient(p.cat)}">${cat?.icon || '🔧'}</div>
+          <div class="cart-item-info">
+            <div class="cart-item-name">${p.name}</div>
+            <div class="cart-item-cat">${cat?.name || p.cat} · ${p.platforms.map(pl => getPlatformName(pl)).join(', ')}</div>
+          </div>
+          <div class="cart-item-price">${p.priceLabel}</div>
+          <button class="cart-item-remove" onclick="removeFromCart('${p.slug}')" title="Remove">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+      `;
+    }).join('');
+
+    cartContent.innerHTML = `
+      ${itemsHtml}
+      <div class="cart-summary">
+        <div class="cart-summary-row">
+          <span class="label">Tools selected</span>
+          <span class="value">${items.length}</span>
+        </div>
+        <div class="cart-summary-row">
+          <span class="label">Trial period</span>
+          <span class="value">14 days free</span>
+        </div>
+        <div class="cart-summary-row total">
+          <span class="label">After trial</span>
+          <span class="value" style="color:var(--green);">From ${items.reduce((min, p) => Math.min(min, p.price), Infinity).toFixed(2)}/mo</span>
+        </div>
+        <div class="cart-trial-note">
+          All tools come with a 14-day free trial. No credit card required to start.
+        </div>
+      </div>
+      <div style="display:flex; gap:12px; margin-top:24px; justify-content:space-between;">
+        <a href="index.html#tools" class="btn-ghost">Continue Browsing</a>
+        <button class="btn-primary" onclick="setStep(2)">Connect Your Store &rarr;</button>
+      </div>
+    `;
+  }
+
+  function removeFromCart(slug) {
+    Cart.removeItem(slug);
+    const product = getProductBySlug(slug);
+    Toast.show('Removed', `${product?.name || 'Tool'} removed from cart.`, 'info');
+    renderCartStep();
+  }
+
+  // ===== STEP 2: STORE INTEGRATION =====
+  function renderIntegrationStep() {
+    const items = Cart.getProducts();
+    const allPlatforms = [...new Set(items.flatMap(p => p.platforms))];
+
+    const storeOptions = [
+      { id: 'amazon', name: 'Amazon', icon: '📦', desc: 'Seller Central / SP-API' },
+      { id: 'shopify', name: 'Shopify', icon: '🛍️', desc: 'Shopify Admin API' },
+      { id: 'walmart', name: 'Walmart', icon: '🏪', desc: 'Walmart Marketplace' },
+      { id: 'ebay', name: 'eBay', icon: '🏷️', desc: 'eBay Developer API' },
+      { id: 'tiktok', name: 'TikTok Shop', icon: '🎵', desc: 'TikTok Seller Center' },
+      { id: 'other', name: 'Other / Later', icon: '⏭️', desc: 'Skip for now' }
+    ];
+
+    const relevantStores = storeOptions.filter(s =>
+      s.id === 'other' || allPlatforms.includes(s.id) || allPlatforms.includes('multi')
+    );
+
+    document.getElementById('cartPageTitle').textContent = 'Connect Your Store';
+    document.getElementById('cartPageDesc').textContent = 'Select the platform you want to connect first. You can add more later.';
+
+    cartContent.innerHTML = `
+      <div class="store-options" id="storeOptions">
+        ${relevantStores.map(s => `
+          <div class="store-option" data-store="${s.id}" onclick="selectStore('${s.id}')">
+            <div class="store-option-icon">${s.icon}</div>
+            <div class="store-option-name">${s.name}</div>
+            <div class="store-option-desc">${s.desc}</div>
+          </div>
+        `).join('')}
+      </div>
+
+      <div id="integrationForm" style="display:none;">
+        <div class="integration-form">
+          <div class="form-group">
+            <label for="storeName">Store / Seller Name</label>
+            <input type="text" id="storeName" placeholder="e.g. My Brand Store">
+          </div>
+          <div class="form-group">
+            <label for="storeEmail">Email Address</label>
+            <input type="email" id="storeEmail" placeholder="you@example.com">
+          </div>
+          <div class="form-group" id="sellerIdGroup">
+            <label for="sellerId" id="sellerIdLabel">Seller ID / Store URL</label>
+            <input type="text" id="sellerId" placeholder="" id="sellerIdInput">
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:12px; margin-top:32px; justify-content:space-between;">
+        <button class="btn-ghost" onclick="goBackToCart()">Back to Cart</button>
+        <button class="btn-primary" id="continueBtn" onclick="handleIntegrationSubmit()" disabled>Continue &rarr;</button>
+      </div>
+    `;
+  }
+
+  function selectStore(storeId) {
+    selectedStore = storeId;
+    document.querySelectorAll('.store-option').forEach(el => {
+      el.classList.toggle('selected', el.dataset.store === storeId);
+    });
+
+    const form = document.getElementById('integrationForm');
+    const continueBtn = document.getElementById('continueBtn');
+    continueBtn.disabled = false;
+
+    if (storeId === 'other') {
+      form.style.display = 'none';
+      return;
+    }
+
+    form.style.display = 'block';
+
+    const labels = {
+      amazon: { label: 'Amazon Seller ID', placeholder: 'e.g. A1B2C3D4E5F6G7' },
+      shopify: { label: 'Shopify Store URL', placeholder: 'e.g. mystore.myshopify.com' },
+      walmart: { label: 'Walmart Seller ID', placeholder: 'e.g. 12345678' },
+      ebay: { label: 'eBay Username', placeholder: 'e.g. mybrand_official' },
+      tiktok: { label: 'TikTok Shop ID', placeholder: 'e.g. 7012345678' }
+    };
+    const config = labels[storeId] || labels.amazon;
+    document.getElementById('sellerIdLabel').textContent = config.label;
+    document.getElementById('sellerId').placeholder = config.placeholder;
+  }
+
+  function handleIntegrationSubmit() {
+    if (!selectedStore) {
+      Toast.show('Select a Store', 'Please select which platform to connect.', 'info');
+      return;
+    }
+
+    if (selectedStore !== 'other') {
+      const email = document.getElementById('storeEmail')?.value?.trim();
+      if (!email || !email.includes('@')) {
+        Toast.show('Email Required', 'Please enter a valid email address.', 'info');
+        return;
+      }
+    }
+
+    setStep(3);
+  }
+
+  function goBackToCart() {
+    document.getElementById('cartPageTitle').textContent = 'Your Cart';
+    document.getElementById('cartPageDesc').textContent = 'Review your selected tools and connect your store to start the 14-day free trial.';
+    setStep(1);
+  }
+
+  // ===== STEP 3: SUCCESS =====
+  function renderSuccessStep() {
+    const items = Cart.getProducts();
+    const storeName = selectedStore === 'other'
+      ? 'your store'
+      : (PLATFORMS[selectedStore]?.name || selectedStore);
+
+    document.getElementById('cartPageTitle').textContent = 'You\'re All Set!';
+    document.getElementById('cartPageDesc').textContent = '';
+    document.querySelectorAll('.cart-step').forEach(el => {
+      const s = parseInt(el.dataset.step);
+      if (s <= 3) el.classList.add('completed');
+    });
+
+    cartContent.innerHTML = `
+      <div class="success-container">
+        <div class="success-icon">
+          <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h2>Your 14-Day Free Trial Has Started!</h2>
+        <p>
+          We're setting up <strong>${items.length} tool${items.length > 1 ? 's' : ''}</strong> for ${storeName}.
+          You'll receive a confirmation email with setup instructions and your dashboard login shortly.
+        </p>
+        <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:24px; text-align:left; margin-bottom:32px;">
+          <h4 style="margin-bottom:12px; font-size:0.92rem;">What happens next:</h4>
+          <ul style="display:flex; flex-direction:column; gap:10px;">
+            <li style="display:flex; align-items:flex-start; gap:10px; font-size:0.88rem; color:var(--text-secondary);">
+              ${CHECK_ICON} <span>Check your email for login credentials and setup guide</span>
+            </li>
+            <li style="display:flex; align-items:flex-start; gap:10px; font-size:0.88rem; color:var(--text-secondary);">
+              ${CHECK_ICON} <span>Complete the API connection in your dashboard (takes ~2 minutes)</span>
+            </li>
+            <li style="display:flex; align-items:flex-start; gap:10px; font-size:0.88rem; color:var(--text-secondary);">
+              ${CHECK_ICON} <span>Your tools will start working immediately once connected</span>
+            </li>
+            <li style="display:flex; align-items:flex-start; gap:10px; font-size:0.88rem; color:var(--text-secondary);">
+              ${CHECK_ICON} <span>Trial ends in 14 days — you'll be reminded before any charge</span>
+            </li>
+          </ul>
+        </div>
+        <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+          <a href="index.html" class="btn-primary">Back to Home</a>
+          <a href="index.html#tools" class="btn-secondary">Browse More Tools</a>
+        </div>
+      </div>
+    `;
+
+    Cart.clear();
+  }
+
+  // Initial render
+  setStep(1);
+</script>
+</body>
+</html>
