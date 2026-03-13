@@ -138,8 +138,9 @@ const RequestsDB = {
         }
         const [req] = await db.query('feature_requests', `id=eq.${requestId}`);
         if (req) {
-          const voteRows = await db.query('votes', `request_id=eq.${requestId}&select=id`);
-          await db.update('feature_requests', requestId, { votes: voteRows.length });
+          const delta = nowVoted ? 1 : -1;
+          const newCount = Math.max(0, (req.votes || 0) + delta);
+          await db.update('feature_requests', requestId, { votes: newCount });
         }
       } catch (e) {
         console.warn('Vote sync failed:', e);
