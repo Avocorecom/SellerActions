@@ -5,11 +5,12 @@
 
 const SUPABASE_URL = 'https://ccbcmxgdzxzgqkszcddk.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_We-SacbNSc3O7JfE8g1DGA_ltenJNSK';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjYmNteGdkenh6Z3Frc3pjZGRrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNzM0ODUsImV4cCI6MjA4ODk0OTQ4NX0.hqNNI7mnp5mXsE12F_0MRjWHISx_nhZ_dsZn_STU8go';
 
 const DB_ENABLED = !!(SUPABASE_URL && SUPABASE_KEY);
 
-// Initialize Supabase JS client (loaded via CDN)
-const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+// Initialize Supabase JS client with legacy anon key (required for Auth)
+const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 // ===== AUTH MODULE =====
 const Auth = {
