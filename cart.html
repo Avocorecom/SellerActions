@@ -240,7 +240,8 @@
         </div>
       `;
     } catch (e) {
-      Toast.show('Error', 'Failed to send magic link. Please try again.', 'error');
+      console.error('Magic link error:', e);
+      Toast.show('Error', e.message || 'Failed to send magic link. Please try again.', 'error');
       if (btn) { btn.disabled = false; btn.textContent = 'Send Magic Link →'; }
     }
   }
