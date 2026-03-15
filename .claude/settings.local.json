@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /Users/huseyinmac16/SellerActions -type d -not -path */.*)",
+      "Bash(curl -sL -o /Users/huseyinmac16/SellerActions/img/logos/ebay.png \"https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/EBay_logo.svg/1200px-EBay_logo.svg.png\")",
+      "Bash(curl -sL -o /Users/huseyinmac16/SellerActions/img/logos/walmart.png \"https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Walmart_logo.svg/1200px-Walmart_logo.svg.png\")",
+      "Bash(curl -sL -o /Users/huseyinmac16/SellerActions/img/logos/shopify.png \"https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Shopify_logo_2018.svg/1200px-Shopify_logo_2018.svg.png\")",
+      "Bash(curl -sL -o /Users/huseyinmac16/SellerActions/img/logos/etsy.png \"https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Etsy_logo.svg/1200px-Etsy_logo.svg.png\")"
+    ]
+  }
+}
