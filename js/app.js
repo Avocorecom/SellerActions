@@ -593,7 +593,7 @@ function renderFooter() {
       </div>
       <div class="footer-bottom">
         <p>&copy; 2026 SellerActions. All rights reserved.</p>
-        <p style="font-size:0.72rem; color:var(--text-muted); margin-top:4px;">v1.4.2 · deployed 2026-03-15 13:25 UTC</p>
+        <p style="font-size:0.72rem; color:var(--text-muted); margin-top:4px;">v1.4.3 · deployed 2026-03-15 13:35 UTC</p>
       </div>
     </div>
   `;

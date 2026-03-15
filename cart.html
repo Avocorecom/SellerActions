@@ -191,6 +191,7 @@
     try {
       const user = await Auth.getUser();
       if (user) {
+        await saveSubscriptions();
         setStep(3);
         return;
       }
@@ -433,6 +434,8 @@
         const user = await Auth.getUser();
         if (user) {
           history.replaceState(null, '', window.location.pathname);
+          // Save subscriptions immediately after login
+          await saveSubscriptions();
           setStep(3);
           return;
         }
