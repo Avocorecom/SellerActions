@@ -163,11 +163,20 @@
           All tools come with a 14-day free trial. No credit card required to start.
         </div>
       </div>
-      <div style="display:flex; gap:12px; margin-top:24px; justify-content:space-between;">
-        <a href="index.html#bundle" class="btn-ghost">${items.length < 2 ? 'Add More for 50% Off' : 'Continue Browsing'}</a>
+      <div style="display:flex; gap:12px; margin-top:24px; justify-content:space-between; align-items:center;">
+        <div style="display:flex; gap:12px; align-items:center;">
+          <a href="index.html#bundle" class="btn-ghost">${items.length < 2 ? 'Add More for 50% Off' : 'Continue Browsing'}</a>
+          <button class="btn-ghost" style="color:var(--red); font-size:0.82rem;" onclick="clearCart()">Clear All</button>
+        </div>
         <button class="btn-primary" onclick="proceedToSignIn()">Continue &rarr;</button>
       </div>
     `;
+  }
+
+  function clearCart() {
+    Cart.clear();
+    Toast.show('Cart Cleared', 'All tools removed from cart.', 'info');
+    renderCartStep();
   }
 
   function removeFromCart(slug) {
