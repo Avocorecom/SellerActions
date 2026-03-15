@@ -206,10 +206,6 @@
             <label for="storeEmail">Email Address</label>
             <input type="email" id="storeEmail" placeholder="you@example.com">
           </div>
-          <div class="form-group" id="sellerIdGroup">
-            <label for="sellerId" id="sellerIdLabel">Seller ID / Store URL</label>
-            <input type="text" id="sellerId" placeholder="" id="sellerIdInput">
-          </div>
         </div>
       </div>
 
@@ -237,16 +233,6 @@
 
     form.style.display = 'block';
 
-    const labels = {
-      amazon: { label: 'Amazon Seller ID', placeholder: 'e.g. A1B2C3D4E5F6G7' },
-      shopify: { label: 'Shopify Store URL', placeholder: 'e.g. mystore.myshopify.com' },
-      walmart: { label: 'Walmart Seller ID', placeholder: 'e.g. 12345678' },
-      ebay: { label: 'eBay Username', placeholder: 'e.g. mybrand_official' },
-      tiktok: { label: 'TikTok Shop ID', placeholder: 'e.g. 7012345678' }
-    };
-    const config = labels[storeId] || labels.amazon;
-    document.getElementById('sellerIdLabel').textContent = config.label;
-    document.getElementById('sellerId').placeholder = config.placeholder;
   }
 
   async function handleIntegrationSubmit() {
@@ -257,7 +243,6 @@
 
     const email = document.getElementById('storeEmail')?.value?.trim() || '';
     const storeName = document.getElementById('storeName')?.value?.trim() || '';
-    const sellerId = document.getElementById('sellerId')?.value?.trim() || '';
 
     if (selectedStore !== 'other') {
       if (!email || !email.includes('@')) {
@@ -274,7 +259,6 @@
       email: email,
       store_name: storeName,
       store_type: selectedStore,
-      seller_id: sellerId,
       tools: items.map(p => p.name).join(', '),
       tools_count: items.length,
       total_price: items.map(p => p.priceLabel).join(', ')
