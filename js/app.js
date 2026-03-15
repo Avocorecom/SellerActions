@@ -491,8 +491,6 @@ function renderNav(activePage) {
       </a>
       <div class="nav-links" id="navLinks">
         <a href="index.html" class="${activePage === 'home' ? 'active' : ''}">Home</a>
-        <a href="index.html#tools" class="${activePage === 'tools' ? 'active' : ''}">Tools</a>
-        <a href="index.html#categories" class="${activePage === 'categories' ? 'active' : ''}">Categories</a>
         <a href="requests.html" class="${activePage === 'requests' ? 'active' : ''}">Requests</a>
       </div>
       <div class="nav-right">
@@ -500,7 +498,7 @@ function renderNav(activePage) {
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/></svg>
           <span class="cart-badge" id="cartBadge">0</span>
         </a>
-        <a href="cart.html" class="btn-nav">14 Days Free</a>
+        <span id="navAuthBtn"><a href="cart.html" class="btn-nav">14 Days Free</a></span>
       </div>
       <button class="mobile-toggle" onclick="toggleMobileMenu()" aria-label="Toggle menu">
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
@@ -509,6 +507,16 @@ function renderNav(activePage) {
   `;
 
   Cart.updateBadge();
+
+  // Update auth button async
+  if (typeof Auth !== 'undefined') {
+    Auth.getUser().then(user => {
+      const authBtn = document.getElementById('navAuthBtn');
+      if (authBtn && user) {
+        authBtn.innerHTML = `<a href="dashboard.html" class="btn-nav">Dashboard</a>`;
+      }
+    }).catch(() => {});
+  }
 }
 
 function toggleMobileMenu() {
@@ -519,10 +527,9 @@ function toggleMobileMenu() {
     menu.className = 'mobile-menu';
     menu.innerHTML = `
       <a href="index.html">Home</a>
-      <a href="index.html#tools">All Tools</a>
-      <a href="index.html#categories">Categories</a>
       <a href="requests.html">Feature Requests</a>
       <a href="cart.html">Cart</a>
+      <a href="dashboard.html">Dashboard</a>
     `;
     document.body.appendChild(menu);
   }

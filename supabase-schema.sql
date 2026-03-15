@@ -96,6 +96,68 @@ create policy "Public can read own store connections"
   on store_connections for select
   using (true);
 
+-- =============================================
+-- USER AUTH TABLES (Supabase Auth + custom data)
+-- =============================================
+
+-- Store Credentials (per-user platform connections)
+create table store_credentials (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  platform text not null default 'amazon',
+  store_name text,
+  selling_partner_id text,
+  spapi_oauth_code text,
+  status text default 'active' check (status in ('active', 'expired', 'revoked')),
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create index idx_store_credentials_user on store_credentials(user_id);
+
+alter table store_credentials enable row level security;
+
+create policy "Users read own credentials"
+  on store_credentials for select
+  using (auth.uid() = user_id);
+
+create policy "Users insert own credentials"
+  on store_credentials for insert
+  with check (auth.uid() = user_id);
+
+create policy "Users update own credentials"
+  on store_credentials for update
+  using (auth.uid() = user_id);
+
+-- User Subscriptions (tools a user has signed up for)
+create table user_subscriptions (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  product_slug text not null,
+  product_name text not null,
+  trial_start timestamptz default now(),
+  trial_end timestamptz default (now() + interval '14 days'),
+  status text default 'trial' check (status in ('trial', 'active', 'cancelled', 'expired')),
+  created_at timestamptz default now(),
+  unique(user_id, product_slug)
+);
+
+create index idx_user_subs_user on user_subscriptions(user_id);
+
+alter table user_subscriptions enable row level security;
+
+create policy "Users read own subscriptions"
+  on user_subscriptions for select
+  using (auth.uid() = user_id);
+
+create policy "Users insert own subscriptions"
+  on user_subscriptions for insert
+  with check (auth.uid() = user_id);
+
+create policy "Users update own subscriptions"
+  on user_subscriptions for update
+  using (auth.uid() = user_id);
+
 -- Seed some initial approved requests
 insert into feature_requests (title, description, platform, status, votes, created_at) values
   ('Inventory Demand Forecasting with AI', 'I need a tool that predicts when I''ll run out of stock based on sales velocity, seasonality, and trends. Current restock planning is all guesswork.', 'Amazon', 'popular', 47, '2026-03-01'),

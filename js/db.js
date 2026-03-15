@@ -1,5 +1,5 @@
 // SellerActions - Supabase Database Layer
-// All feature requests, votes, and comments are stored in Supabase.
+// All feature requests, votes, comments, auth, and subscriptions are stored in Supabase.
 // Setup: Create a free project at https://supabase.com, run the SQL schema,
 // then paste your URL and anon key below.
 
@@ -8,35 +8,79 @@ const SUPABASE_KEY = 'sb_publishable_We-SacbNSc3O7JfE8g1DGA_ltenJNSK';
 
 const DB_ENABLED = !!(SUPABASE_URL && SUPABASE_KEY);
 
+// Initialize Supabase JS client (loaded via CDN)
+const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+// ===== AUTH MODULE =====
+const Auth = {
+  async getSession() {
+    if (!supabase) return null;
+    const { data: { session } } = await supabase.auth.getSession();
+    return session;
+  },
+
+  async getUser() {
+    const session = await this.getSession();
+    return session?.user || null;
+  },
+
+  async signInWithMagicLink(email, redirectTo) {
+    if (!supabase) throw new Error('Supabase not initialized');
+    const { data, error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: redirectTo }
+    });
+    if (error) throw error;
+    return data;
+  },
+
+  async signOut() {
+    if (!supabase) return;
+    await supabase.auth.signOut();
+  },
+
+  onAuthStateChange(callback) {
+    if (!supabase) return;
+    supabase.auth.onAuthStateChange(callback);
+  }
+};
+
+// ===== DB HELPER (with auth-aware headers) =====
 const db = {
-  headers() {
-    return {
+  async headers() {
+    const h = {
       'apikey': SUPABASE_KEY,
-      'Authorization': `Bearer ${SUPABASE_KEY}`,
       'Content-Type': 'application/json',
       'Prefer': 'return=representation'
     };
+    // Use authenticated token if available
+    try {
+      const session = await Auth.getSession();
+      h['Authorization'] = `Bearer ${session?.access_token || SUPABASE_KEY}`;
+    } catch {
+      h['Authorization'] = `Bearer ${SUPABASE_KEY}`;
+    }
+    return h;
   },
 
   async query(table, params = '') {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, { headers: this.headers() });
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, { headers: await this.headers() });
     if (!res.ok) throw new Error(`DB error: ${res.status}`);
     return res.json();
   },
 
   async insert(table, data) {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
-      method: 'POST', headers: this.headers(), body: JSON.stringify(data)
+      method: 'POST', headers: await this.headers(), body: JSON.stringify(data)
     });
     if (!res.ok) throw new Error(`DB insert error: ${res.status}`);
     return res.json();
   },
 
   async update(table, id, data) {
+    const h = await this.headers();
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
-      method: 'PATCH',
-      headers: { ...this.headers(), 'Prefer': 'return=representation' },
-      body: JSON.stringify(data)
+      method: 'PATCH', headers: h, body: JSON.stringify(data)
     });
     if (!res.ok) throw new Error(`DB update error: ${res.status}`);
     return res.json();
@@ -44,9 +88,56 @@ const db = {
 
   async delete(table, id) {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
-      method: 'DELETE', headers: this.headers()
+      method: 'DELETE', headers: await this.headers()
     });
     if (!res.ok) throw new Error(`DB delete error: ${res.status}`);
+  }
+};
+
+// ===== USER DATA HELPERS =====
+const UserDB = {
+  async getStoreCredentials() {
+    const user = await Auth.getUser();
+    if (!user) return [];
+    return db.query('store_credentials', `user_id=eq.${user.id}&order=created_at.desc`);
+  },
+
+  async hasAmazonConnected() {
+    const creds = await this.getStoreCredentials();
+    return creds.some(c => c.platform === 'amazon' && c.status === 'active');
+  },
+
+  async saveStoreCredential(data) {
+    const user = await Auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+    return db.insert('store_credentials', { ...data, user_id: user.id });
+  },
+
+  async getSubscriptions() {
+    const user = await Auth.getUser();
+    if (!user) return [];
+    return db.query('user_subscriptions', `user_id=eq.${user.id}&order=created_at.desc`);
+  },
+
+  async addSubscription(productSlug, productName) {
+    const user = await Auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+    return db.insert('user_subscriptions', {
+      user_id: user.id,
+      product_slug: productSlug,
+      product_name: productName
+    });
+  },
+
+  async addSubscriptions(products) {
+    const user = await Auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+    const rows = products.map(p => ({
+      user_id: user.id,
+      product_slug: p.slug,
+      product_name: p.name
+    }));
+    return db.insert('user_subscriptions', rows);
   }
 };
 

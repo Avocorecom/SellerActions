@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — SellerActions</title>
+  <meta name="description" content="Manage your SellerActions tools, connected stores, and subscriptions.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="nav" id="mainNav"></nav>
+
+<section class="dashboard-page">
+  <div class="container">
+    <div class="dashboard-header" id="dashHeader">
+      <div>
+        <h2>Dashboard</h2>
+        <p class="user-email" id="userEmail"></p>
+      </div>
+    </div>
+
+    <div id="dashContent">
+      <div class="success-container" style="padding:60px 0;">
+        <div class="success-icon" style="animation: pulse 1.5s ease-in-out infinite;">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M12 2v4m0 12v4m-7.07-3.93l2.83-2.83m8.49-8.49l2.83-2.83M2 12h4m12 0h4m-3.93 7.07l-2.83-2.83M7.76 7.76L4.93 4.93"/>
+          </svg>
+        </div>
+        <p style="color:var(--text-secondary);">Loading your dashboard...</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer" id="mainFooter"></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/data.js"></script>
+<script src="js/db.js"></script>
+<script src="js/app.js"></script>
+<script>
+  renderNav('dashboard');
+  renderFooter();
+
+  const platformIcons = {
+    amazon: '📦', shopify: '🛍️', walmart: '🏪',
+    ebay: '🏷️', tiktok: '🎵'
+  };
+
+  async function initDashboard() {
+    const user = await Auth.getUser();
+
+    if (!user) {
+      // Not logged in — show login form
+      document.getElementById('dashContent').innerHTML = `
+        <div class="auth-form" style="margin-top:40px;">
+          <h3>Sign in to your Dashboard</h3>
+          <p>Enter your email to receive a magic link.</p>
+          <div class="form-group">
+            <label for="loginEmail">Email Address</label>
+            <input type="email" id="loginEmail" placeholder="you@example.com">
+          </div>
+          <button class="btn-primary" id="loginBtn" onclick="dashboardLogin()" style="width:100%; margin-top:8px;">Send Magic Link</button>
+          <p id="loginMsg" style="margin-top:16px; font-size:0.82rem; color:var(--text-muted); display:none;"></p>
+        </div>
+      `;
+      return;
+    }
+
+    // Show user email
+    document.getElementById('userEmail').textContent = user.email;
+
+    // Add sign out button to header
+    const header = document.getElementById('dashHeader');
+    const signOutBtn = document.createElement('button');
+    signOutBtn.className = 'btn-signout';
+    signOutBtn.textContent = 'Sign Out';
+    signOutBtn.onclick = async () => { await Auth.signOut(); window.location.reload(); };
+    header.appendChild(signOutBtn);
+
+    // Fetch data
+    let credentials = [];
+    let subscriptions = [];
+    try {
+      credentials = await UserDB.getStoreCredentials();
+    } catch (e) { console.warn('Failed to fetch credentials:', e); }
+    try {
+      subscriptions = await UserDB.getSubscriptions();
+    } catch (e) { console.warn('Failed to fetch subscriptions:', e); }
+
+    renderDashboard(credentials, subscriptions);
+  }
+
+  function renderDashboard(credentials, subscriptions) {
+    const content = document.getElementById('dashContent');
+
+    // Connected Platforms
+    let platformsHtml = '';
+    if (credentials.length === 0) {
+      platformsHtml = `
+        <div class="dashboard-empty">
+          <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+          <p>No platforms connected yet.</p>
+        </div>
+      `;
+    } else {
+      platformsHtml = credentials.map(c => `
+        <div class="platform-row">
+          <div class="platform-icon">${platformIcons[c.platform] || '🔗'}</div>
+          <div class="platform-info">
+            <div class="platform-name">${c.store_name || c.platform}</div>
+            ${c.selling_partner_id ? `<div class="platform-id">${c.selling_partner_id}</div>` : ''}
+          </div>
+          <span class="status-badge ${c.status}">${c.status}</span>
+        </div>
+      `).join('');
+    }
+
+    // Subscriptions
+    let subsHtml = '';
+    if (subscriptions.length === 0) {
+      subsHtml = `
+        <div class="dashboard-empty">
+          <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+          <p>No tools subscribed yet.</p>
+        </div>
+      `;
+    } else {
+      subsHtml = subscriptions.map(s => {
+        const product = getProductBySlug(s.product_slug);
+        const cat = product ? CATEGORIES[product.cat] : null;
+        const icon = cat?.icon || '🔧';
+        const gradient = product ? getIconGradient(product.cat) : 'linear-gradient(135deg, #667eea, #764ba2)';
+
+        // Calculate trial days
+        const now = new Date();
+        const trialEnd = new Date(s.trial_end);
+        const trialStart = new Date(s.trial_start);
+        const totalDays = Math.ceil((trialEnd - trialStart) / (1000 * 60 * 60 * 24));
+        const daysLeft = Math.max(0, Math.ceil((trialEnd - now) / (1000 * 60 * 60 * 24)));
+        const progress = totalDays > 0 ? ((totalDays - daysLeft) / totalDays) * 100 : 100;
+
+        let statusBadge = '';
+        let trialInfo = '';
+        if (s.status === 'trial') {
+          statusBadge = `<span class="status-badge trial">Trial</span>`;
+          trialInfo = `<div class="sub-trial"><span class="days-left">${daysLeft} days</span> remaining</div>
+            <div class="trial-bar"><div class="trial-fill" style="width:${progress}%"></div></div>`;
+        } else if (s.status === 'active') {
+          statusBadge = `<span class="status-badge active">Active</span>`;
+        } else if (s.status === 'cancelled') {
+          statusBadge = `<span class="status-badge cancelled">Cancelled</span>`;
+        } else if (s.status === 'expired') {
+          statusBadge = `<span class="status-badge expired">Expired</span>`;
+        }
+
+        return `
+          <div class="subscription-row">
+            <div class="sub-icon" style="background:${gradient}">${icon}</div>
+            <div class="sub-info">
+              <div class="sub-name">${s.product_name}</div>
+              ${trialInfo}
+            </div>
+            ${statusBadge}
+          </div>
+        `;
+      }).join('');
+    }
+
+    content.innerHTML = `
+      <div class="dashboard-grid">
+        <div class="dashboard-card">
+          <div class="dashboard-card-header">
+            <h3>Connected Platforms</h3>
+            <span class="badge" style="background:var(--accent-glow); color:var(--accent);">${credentials.length}</span>
+          </div>
+          ${platformsHtml}
+          <a href="cart.html" class="btn-add-platform">+ Connect a Platform</a>
+        </div>
+
+        <div class="dashboard-card">
+          <div class="dashboard-card-header">
+            <h3>Your Tools</h3>
+            <span class="badge" style="background:var(--green-bg); color:var(--green);">${subscriptions.length}</span>
+          </div>
+          ${subsHtml}
+          <a href="index.html#bundle" class="btn-add-platform">+ Add More Tools</a>
+        </div>
+      </div>
+    `;
+  }
+
+  async function dashboardLogin() {
+    const email = document.getElementById('loginEmail')?.value?.trim();
+    if (!email || !email.includes('@')) {
+      Toast.show('Invalid Email', 'Please enter a valid email address.', 'info');
+      return;
+    }
+
+    const btn = document.getElementById('loginBtn');
+    const msg = document.getElementById('loginMsg');
+    if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+
+    try {
+      const redirectUrl = window.location.origin + window.location.pathname;
+      await Auth.signInWithMagicLink(email, redirectUrl);
+      if (msg) {
+        msg.style.display = 'block';
+        msg.innerHTML = `Magic link sent to <strong style="color:var(--accent);">${email}</strong>. Check your email and click the link to sign in.`;
+      }
+      if (btn) { btn.textContent = 'Link Sent!'; }
+    } catch (e) {
+      Toast.show('Error', 'Failed to send magic link. Please try again.', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = 'Send Magic Link'; }
+    }
+  }
+
+  // Handle magic link callback (tokens in URL hash)
+  async function handleAuthCallback() {
+    if (window.location.hash && window.location.hash.includes('access_token')) {
+      await new Promise(r => setTimeout(r, 500));
+      history.replaceState(null, '', window.location.pathname);
+    }
+    initDashboard();
+  }
+
+  handleAuthCallback();
+</script>
+
+<style>
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.95); }
+  }
+</style>
+</body>
+</html>

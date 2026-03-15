@@ -28,10 +28,14 @@
       </div>
       <div class="cart-step" data-step="2">
         <div class="cart-step-num">2</div>
-        <span class="cart-step-label">Connect Store</span>
+        <span class="cart-step-label">Sign In</span>
       </div>
       <div class="cart-step" data-step="3">
         <div class="cart-step-num">3</div>
+        <span class="cart-step-label">Connect Store</span>
+      </div>
+      <div class="cart-step" data-step="4">
+        <div class="cart-step-num">4</div>
         <span class="cart-step-label">Start Trial</span>
       </div>
     </div>
@@ -43,7 +47,9 @@
 
 <footer class="footer" id="mainFooter"></footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/data.js"></script>
+<script src="js/db.js"></script>
 <script src="js/app.js"></script>
 <script>
   renderNav('');
@@ -52,6 +58,9 @@
   let currentStep = 1;
   let selectedStore = null;
   const cartContent = document.getElementById('cartContent');
+
+  // Get current page URL for magic link redirect
+  const REDIRECT_URL = window.location.origin + window.location.pathname;
 
   function setStep(step) {
     currentStep = step;
@@ -66,12 +75,16 @@
 
   function renderStep() {
     if (currentStep === 1) renderCartStep();
-    else if (currentStep === 2) renderIntegrationStep();
-    else if (currentStep === 3) renderSuccessStep();
+    else if (currentStep === 2) renderSignInStep();
+    else if (currentStep === 3) renderIntegrationStep();
+    else if (currentStep === 4) renderSuccessStep();
   }
 
   // ===== STEP 1: CART REVIEW =====
   function renderCartStep() {
+    document.getElementById('cartPageTitle').textContent = 'Your Cart';
+    document.getElementById('cartPageDesc').textContent = 'Review your selected tools and connect your store to start the 14-day free trial.';
+
     const items = Cart.getProducts();
 
     if (items.length === 0) {
@@ -82,7 +95,7 @@
           </svg>
           <h3>Your cart is empty</h3>
           <p>Browse our tools and add the ones you need. Every tool includes a 14-day free trial.</p>
-          <a href="index.html#tools" class="btn-primary">Browse Tools</a>
+          <a href="index.html#bundle" class="btn-primary">Browse Tools</a>
         </div>
       `;
       return;
@@ -151,8 +164,8 @@
         </div>
       </div>
       <div style="display:flex; gap:12px; margin-top:24px; justify-content:space-between;">
-        <a href="index.html#tools" class="btn-ghost">${items.length < 2 ? 'Add More for 50% Off' : 'Continue Browsing'}</a>
-        <button class="btn-primary" onclick="setStep(2)">Connect Your Store &rarr;</button>
+        <a href="index.html#bundle" class="btn-ghost">${items.length < 2 ? 'Add More for 50% Off' : 'Continue Browsing'}</a>
+        <button class="btn-primary" onclick="proceedToSignIn()">Continue &rarr;</button>
       </div>
     `;
   }
@@ -164,10 +177,90 @@
     renderCartStep();
   }
 
-  // ===== STEP 2: STORE INTEGRATION =====
-  function renderIntegrationStep() {
+  // Check if already logged in, skip sign-in step
+  async function proceedToSignIn() {
+    const user = await Auth.getUser();
+    if (user) {
+      // Already logged in, skip to connect store
+      setStep(3);
+    } else {
+      setStep(2);
+    }
+  }
+
+  // ===== STEP 2: SIGN IN (Magic Link) =====
+  function renderSignInStep() {
+    document.getElementById('cartPageTitle').textContent = 'Sign In to Continue';
+    document.getElementById('cartPageDesc').textContent = 'We\'ll send you a magic link — no password needed.';
+
+    cartContent.innerHTML = `
+      <div class="auth-form">
+        <div class="form-group">
+          <label for="authEmail">Email Address</label>
+          <input type="email" id="authEmail" placeholder="you@example.com">
+        </div>
+        <div style="display:flex; gap:12px; margin-top:24px; justify-content:space-between;">
+          <button class="btn-ghost" onclick="setStep(1)">Back</button>
+          <button class="btn-primary" id="sendMagicLinkBtn" onclick="sendMagicLink()">Send Magic Link &rarr;</button>
+        </div>
+      </div>
+    `;
+  }
+
+  async function sendMagicLink() {
+    const email = document.getElementById('authEmail')?.value?.trim();
+    if (!email || !email.includes('@')) {
+      Toast.show('Invalid Email', 'Please enter a valid email address.', 'info');
+      return;
+    }
+
+    const btn = document.getElementById('sendMagicLinkBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+
+    try {
+      await Auth.signInWithMagicLink(email, REDIRECT_URL);
+
+      // Save cart to localStorage so it survives the redirect
+      localStorage.setItem('sa_pending_email', email);
+
+      // Show "check your email" screen
+      cartContent.innerHTML = `
+        <div class="magic-link-sent">
+          <div class="mail-icon">📧</div>
+          <h3>Check Your Email</h3>
+          <p>
+            We sent a magic link to <span class="email-highlight">${email}</span>.<br>
+            Click the link in the email to sign in and continue.
+          </p>
+          <p style="margin-top:16px; font-size:0.82rem; color:var(--text-muted);">
+            Didn't receive it? Check your spam folder or
+            <a href="#" onclick="event.preventDefault(); renderSignInStep();" style="color:var(--accent);">try again</a>.
+          </p>
+        </div>
+      `;
+    } catch (e) {
+      Toast.show('Error', 'Failed to send magic link. Please try again.', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = 'Send Magic Link →'; }
+    }
+  }
+
+  // ===== STEP 3: CONNECT STORE =====
+  async function renderIntegrationStep() {
     const items = Cart.getProducts();
     const allPlatforms = [...new Set(items.flatMap(p => p.platforms))];
+
+    // Check if Amazon is already connected
+    let amazonConnected = false;
+    try {
+      amazonConnected = await UserDB.hasAmazonConnected();
+    } catch {}
+
+    if (amazonConnected) {
+      // Amazon already connected, save subscriptions and go to success
+      await saveSubscriptions();
+      setStep(4);
+      return;
+    }
 
     const storeOptions = [
       { id: 'amazon', name: 'Amazon', icon: '📦', desc: 'Seller Central / SP-API' },
@@ -202,15 +295,11 @@
             <label for="storeName">Store / Seller Name</label>
             <input type="text" id="storeName" placeholder="e.g. My Brand Store">
           </div>
-          <div class="form-group">
-            <label for="storeEmail">Email Address</label>
-            <input type="email" id="storeEmail" placeholder="you@example.com">
-          </div>
         </div>
       </div>
 
       <div style="display:flex; gap:12px; margin-top:32px; justify-content:space-between;">
-        <button class="btn-ghost" onclick="goBackToCart()">Back to Cart</button>
+        <button class="btn-ghost" onclick="setStep(1)">Back to Cart</button>
         <button class="btn-primary" id="continueBtn" onclick="handleIntegrationSubmit()" disabled>Continue &rarr;</button>
       </div>
     `;
@@ -232,7 +321,6 @@
     }
 
     form.style.display = 'block';
-
   }
 
   async function handleIntegrationSubmit() {
@@ -241,35 +329,15 @@
       return;
     }
 
-    const email = document.getElementById('storeEmail')?.value?.trim() || '';
     const storeName = document.getElementById('storeName')?.value?.trim() || '';
-
-    if (selectedStore !== 'other') {
-      if (!email || !email.includes('@')) {
-        Toast.show('Email Required', 'Please enter a valid email address.', 'info');
-        return;
-      }
-    }
 
     const btn = document.getElementById('continueBtn');
     if (btn) { btn.disabled = true; btn.textContent = 'Connecting...'; }
 
-    const items = Cart.getProducts();
-    await submitTrialSignup({
-      email: email,
-      store_name: storeName,
-      store_type: selectedStore,
-      tools: items.map(p => p.name).join(', '),
-      tools_count: items.length,
-      total_price: items.map(p => p.priceLabel).join(', ')
-    });
-
-    // Redirect to platform OAuth authorization
+    // Redirect to Amazon OAuth
     if (selectedStore === 'amazon') {
-      // Save signup info for OAuth callback page
-      localStorage.setItem('sa_signup_email', email);
+      // Save store name for OAuth callback
       localStorage.setItem('sa_signup_store', storeName);
-      localStorage.setItem('sa_signup_tools', items.map(p => p.name).join(', '));
 
       const state = encodeURIComponent(storeName || 'seller');
       const appId = 'amzn1.sp.solution.4744b25e-cf83-49bc-a0a3-d0b36118ee3f';
@@ -278,27 +346,36 @@
       return;
     }
 
-    setStep(3);
+    // For other platforms, save subscriptions and go to success
+    await saveSubscriptions();
+    setStep(4);
   }
 
-  function goBackToCart() {
-    document.getElementById('cartPageTitle').textContent = 'Your Cart';
-    document.getElementById('cartPageDesc').textContent = 'Review your selected tools and connect your store to start the 14-day free trial.';
-    setStep(1);
-  }
-
-  // ===== STEP 3: SUCCESS =====
-  function renderSuccessStep() {
+  // Save cart items as user subscriptions in DB
+  async function saveSubscriptions() {
     const items = Cart.getProducts();
+    if (items.length === 0) return;
+
+    try {
+      await UserDB.addSubscriptions(items);
+    } catch (e) {
+      console.warn('Failed to save subscriptions:', e);
+    }
+  }
+
+  // ===== STEP 4: SUCCESS =====
+  async function renderSuccessStep() {
+    const items = Cart.getProducts();
+    const user = await Auth.getUser();
     const storeName = selectedStore === 'other'
       ? 'your store'
-      : (PLATFORMS[selectedStore]?.name || selectedStore);
+      : (selectedStore ? (PLATFORMS[selectedStore]?.name || selectedStore) : 'your store');
 
     document.getElementById('cartPageTitle').textContent = 'You\'re All Set!';
     document.getElementById('cartPageDesc').textContent = '';
     document.querySelectorAll('.cart-step').forEach(el => {
       const s = parseInt(el.dataset.step);
-      if (s <= 3) el.classList.add('completed');
+      if (s <= 4) el.classList.add('completed');
     });
 
     cartContent.innerHTML = `
@@ -308,20 +385,17 @@
         </div>
         <h2>Your 14-Day Free Trial Has Started!</h2>
         <p>
+          ${user ? `Signed in as <strong>${user.email}</strong>.<br>` : ''}
           We're setting up <strong>${items.length} tool${items.length > 1 ? 's' : ''}</strong> for ${storeName}.
-          You'll receive a confirmation email with setup instructions and your dashboard login shortly.
         </p>
         <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:24px; text-align:left; margin-bottom:32px;">
           <h4 style="margin-bottom:12px; font-size:0.92rem;">What happens next:</h4>
           <ul style="display:flex; flex-direction:column; gap:10px;">
             <li style="display:flex; align-items:flex-start; gap:10px; font-size:0.88rem; color:var(--text-secondary);">
-              ${CHECK_ICON} <span>Check your email for login credentials and setup guide</span>
+              ${CHECK_ICON} <span>Your tools are now active in your dashboard</span>
             </li>
             <li style="display:flex; align-items:flex-start; gap:10px; font-size:0.88rem; color:var(--text-secondary);">
-              ${CHECK_ICON} <span>Complete the API connection in your dashboard (takes ~2 minutes)</span>
-            </li>
-            <li style="display:flex; align-items:flex-start; gap:10px; font-size:0.88rem; color:var(--text-secondary);">
-              ${CHECK_ICON} <span>Your tools will start working immediately once connected</span>
+              ${CHECK_ICON} <span>Data will start syncing automatically once connected</span>
             </li>
             <li style="display:flex; align-items:flex-start; gap:10px; font-size:0.88rem; color:var(--text-secondary);">
               ${CHECK_ICON} <span>Trial ends in 14 days — you'll be reminded before any charge</span>
@@ -329,8 +403,8 @@
           </ul>
         </div>
         <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
-          <a href="index.html" class="btn-primary">Back to Home</a>
-          <a href="index.html#tools" class="btn-secondary">Browse More Tools</a>
+          <a href="dashboard.html" class="btn-primary">Go to Dashboard</a>
+          <a href="index.html" class="btn-secondary">Back to Home</a>
         </div>
       </div>
     `;
@@ -338,8 +412,35 @@
     Cart.clear();
   }
 
-  // Initial render
-  setStep(1);
+  // ===== INIT: Handle magic link callback & auto-advance =====
+  async function initCart() {
+    // Check if returning from magic link (Supabase puts tokens in URL hash)
+    if (window.location.hash && window.location.hash.includes('access_token')) {
+      // Supabase JS client auto-picks up the session from the hash
+      // Wait a moment for it to process
+      await new Promise(r => setTimeout(r, 500));
+
+      const user = await Auth.getUser();
+      if (user) {
+        // Clean URL hash
+        history.replaceState(null, '', window.location.pathname);
+        // User just authenticated, go to connect store
+        setStep(3);
+        return;
+      }
+    }
+
+    // Check if already logged in
+    const user = await Auth.getUser();
+    if (user && Cart.count() > 0) {
+      // Already logged in with items in cart — maybe returning from OAuth
+      // Stay on step 1, let user proceed
+    }
+
+    setStep(1);
+  }
+
+  initCart();
 </script>
 </body>
 </html>
