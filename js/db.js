@@ -10,13 +10,15 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const DB_ENABLED = !!(SUPABASE_URL && SUPABASE_KEY);
 
 // Initialize Supabase JS client with legacy anon key (required for Auth)
-const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+const _supabaseLib = window.supabase;
+const supabaseClient = _supabaseLib ? _supabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+console.log('Supabase client initialized:', !!supabaseClient);
 
 // ===== AUTH MODULE =====
 const Auth = {
   async getSession() {
-    if (!supabase) return null;
-    const { data: { session } } = await supabase.auth.getSession();
+    if (!supabaseClient) return null;
+    const { data: { session } } = await supabaseClient.auth.getSession();
     return session;
   },
 
@@ -26,8 +28,8 @@ const Auth = {
   },
 
   async signInWithMagicLink(email, redirectTo) {
-    if (!supabase) throw new Error('Supabase not initialized');
-    const { data, error } = await supabase.auth.signInWithOtp({
+    if (!supabaseClient) throw new Error('Supabase not initialized');
+    const { data, error } = await supabaseClient.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: redirectTo }
     });
@@ -36,13 +38,13 @@ const Auth = {
   },
 
   async signOut() {
-    if (!supabase) return;
-    await supabase.auth.signOut();
+    if (!supabaseClient) return;
+    await supabaseClient.auth.signOut();
   },
 
   onAuthStateChange(callback) {
-    if (!supabase) return;
-    supabase.auth.onAuthStateChange(callback);
+    if (!supabaseClient) return;
+    supabaseClient.auth.onAuthStateChange(callback);
   }
 };
 
