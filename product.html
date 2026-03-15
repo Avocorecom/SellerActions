@@ -108,7 +108,7 @@
         `;
       }
     } else {
-      sidebarButtons = `<button class="btn-primary btn-full" onclick="Modal.showNotifyForm(getProductBySlug('${product.slug}'))">Get Notified When Available</button>`;
+      sidebarButtons = `<button class="btn-primary btn-full" onclick="showStartNowModal('${product.slug}', '${product.name.replace(/'/g, "\\'")}')">Start Now &rarr;</button>`;
     }
 
     document.getElementById('productContent').innerHTML = `
@@ -124,7 +124,7 @@
           <h1 class="product-title">${product.name}</h1>
           <div class="product-meta">
             ${product.platforms.map(p => `<span class="tool-tag ${getPlatformClass(p)}">${getPlatformName(p)}</span>`).join('')}
-            ${product.live ? '<span class="live-indicator"><span class="dot"></span> LIVE</span>' : '<span class="trial-badge">COMING SOON</span>'}
+            ${product.live ? '<span class="live-indicator"><span class="dot"></span> LIVE</span>' : ''}
             <span class="trial-badge">14-day free trial</span>
           </div>
           <p class="product-desc">${product.longDesc}</p>
@@ -228,7 +228,7 @@
       if (product.live) {
         handleAddToCart(product.slug);
       } else {
-        Modal.showNotifyForm(product);
+        showStartNowModal(product.slug, product.name);
       }
     };
   }

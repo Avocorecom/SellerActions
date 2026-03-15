@@ -57,12 +57,12 @@
   <div class="container">
     <p class="platforms-label">Supported Platforms</p>
     <div class="platforms-row">
-      <span>Amazon</span>
-      <span>Shopify</span>
-      <span>Walmart</span>
-      <span>eBay</span>
-      <span>TikTok Shop</span>
-      <span>Etsy</span>
+      <img src="img/logos/amazon.svg" alt="Amazon" class="platform-logo">
+      <img src="img/logos/shopify.svg" alt="Shopify" class="platform-logo">
+      <img src="img/logos/walmart.svg" alt="Walmart" class="platform-logo">
+      <img src="img/logos/ebay.svg" alt="eBay" class="platform-logo">
+      <img src="img/logos/tiktok-shop.svg" alt="TikTok Shop" class="platform-logo">
+      <img src="img/logos/etsy.svg" alt="Etsy" class="platform-logo">
     </div>
   </div>
 </section>
@@ -75,6 +75,31 @@
       <p>Our top-scoring tools based on market demand, differentiation, and seller impact.</p>
     </div>
     <div class="tools-grid" id="featuredGrid"></div>
+  </div>
+</section>
+
+<!-- ALL-INCLUSIVE BUNDLE -->
+<section class="section section-bordered" id="bundle">
+  <div class="container">
+    <div class="bundle-header">
+      <div class="bundle-title-row">
+        <div class="bundle-logo">
+          <div class="bundle-logo-icon">SA</div>
+          <h2>SellerActions 360</h2>
+        </div>
+        <div class="bundle-pricing">
+          <span class="bundle-app-count" id="bundleAppCount"></span>
+        </div>
+      </div>
+      <p class="bundle-subtitle">Our complete seller operations bundle, all in one platform.</p>
+    </div>
+    <div class="bundle-box">
+      <p class="bundle-explore">Explore what's included in the SellerActions 360 bundle:</p>
+      <div class="bundle-grid" id="bundleGrid"></div>
+    </div>
+    <div style="text-align:center; margin-top:32px;">
+      <a href="#" class="btn-primary btn-lg" onclick="event.preventDefault(); showStartNowModal('selleractions-360', 'SellerActions 360 Bundle')">Start 14-Day Free Trial &rarr;</a>
+    </div>
   </div>
 </section>
 
@@ -171,6 +196,31 @@
   // Featured grid
   const featuredProducts = getFeaturedProducts().sort((a, b) => b.score - a.score);
   document.getElementById('featuredGrid').innerHTML = featuredProducts.map(renderToolCard).join('');
+
+  // Bundle grid - group products by category
+  const bundleCats = {};
+  PRODUCTS.forEach(p => {
+    const catName = CATEGORIES[p.cat]?.name || p.cat;
+    if (!bundleCats[catName]) bundleCats[catName] = [];
+    bundleCats[catName].push(p);
+  });
+  let bundleHtml = '';
+  Object.keys(bundleCats).forEach(catName => {
+    bundleHtml += `<div class="bundle-category"><h4>${catName}</h4>`;
+    bundleCats[catName].forEach(p => {
+      bundleHtml += `
+        <div class="bundle-item">
+          <div class="bundle-item-icon" style="background:${getIconGradient(p.cat)}">${getCatIcon(p.cat)}</div>
+          <div class="bundle-item-info">
+            <strong>${p.name}</strong>
+            <span>${p.shortDesc.substring(0, 60)}${p.shortDesc.length > 60 ? '...' : ''}</span>
+          </div>
+        </div>`;
+    });
+    bundleHtml += '</div>';
+  });
+  document.getElementById('bundleGrid').innerHTML = bundleHtml;
+  document.getElementById('bundleAppCount').textContent = `${PRODUCTS.length} apps. 1 subscription. $49/month.`;
 
   // Category grid
   document.getElementById('categoryGrid').innerHTML = Object.keys(CATEGORIES).map(renderCategoryCard).join('');

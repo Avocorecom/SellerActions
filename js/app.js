@@ -184,8 +184,68 @@ const Modal = {
       </div>
     `);
     setTimeout(() => document.getElementById('notifyEmail')?.focus(), 100);
+  },
+
+  showStartNowForm(slug, productName) {
+    this.open(`
+      <h3>Get Started with ${productName}</h3>
+      <p>Leave your details and our team will reach out to set up your account and get you started.</p>
+      <div class="form-group">
+        <label for="startName">Full Name</label>
+        <input type="text" id="startName" placeholder="John Doe" required>
+      </div>
+      <div class="form-group">
+        <label for="startEmail">Email Address</label>
+        <input type="email" id="startEmail" placeholder="you@example.com" required>
+      </div>
+      <div class="form-group">
+        <label for="startStore">Store URL (optional)</label>
+        <input type="text" id="startStore" placeholder="amazon.com/shops/yourstore">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary btn-full" onclick="handleStartNowSubmit('${slug}', '${productName.replace(/'/g, "\\'")}')">Submit</button>
+        <button class="btn-ghost" onclick="Modal.close()">Cancel</button>
+      </div>
+    `);
+    setTimeout(() => document.getElementById('startName')?.focus(), 100);
   }
 };
+
+function showStartNowModal(slug, productName) {
+  Modal.showStartNowForm(slug, productName);
+}
+
+async function handleStartNowSubmit(slug, productName) {
+  const name = document.getElementById('startName')?.value?.trim();
+  const email = document.getElementById('startEmail')?.value?.trim();
+  const store = document.getElementById('startStore')?.value?.trim();
+
+  if (!name) {
+    Toast.show('Name Required', 'Please enter your name.', 'info');
+    return;
+  }
+  if (!email || !email.includes('@')) {
+    Toast.show('Invalid Email', 'Please enter a valid email address.', 'info');
+    return;
+  }
+
+  const btn = document.querySelector('.modal .btn-primary');
+  if (btn) { btn.disabled = true; btn.textContent = 'Submitting...'; }
+
+  await Notify.sendToFormspree({
+    _subject: `Start Now: ${productName}`,
+    type: 'start_now',
+    name: name,
+    email: email,
+    store_url: store || 'Not provided',
+    product_name: productName,
+    product_slug: slug,
+    timestamp: new Date().toISOString()
+  });
+
+  Modal.close();
+  Toast.show('Request Received!', "Thanks! We'll reach out within 24 hours to get you set up.", 'success');
+}
 
 async function handleNotifySubmit(slug) {
   const email = document.getElementById('notifyEmail')?.value?.trim();
@@ -354,7 +414,7 @@ function renderToolCard(product) {
     ? '<div class="badge-top badge-featured">TOP PICK</div>'
     : product.live
       ? '<div class="badge-top badge-live">LIVE</div>'
-      : '<div class="badge-top badge-new">COMING SOON</div>';
+      : '';
 
   const liveHtml = product.live
     ? '<div class="live-indicator"><span class="dot"></span> LIVE</div>'
@@ -378,7 +438,7 @@ function renderToolCard(product) {
         <span>Score ${product.score.toFixed(1)}</span>
         <div class="score-bar"><div class="score-fill" style="width:${(product.score / 10) * 100}%"></div></div>
       </div>
-      <a class="tool-cta-link" href="#" onclick="event.preventDefault(); event.stopPropagation(); Modal.showNotifyForm(getProductBySlug('${product.slug}'))">Notify Me &rarr;</a>
+      <a class="btn-card-trial" href="#" onclick="event.preventDefault(); event.stopPropagation(); showStartNowModal('${product.slug}', '${product.name.replace(/'/g, "\\'")}')">Start Now &rarr;</a>
     `;
   }
 
