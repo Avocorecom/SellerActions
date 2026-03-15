@@ -305,6 +305,23 @@ function handleTryFree(slug) {
   handleAddToCart(slug, true);
 }
 
+function addBundleToCart() {
+  const liveProducts = getLiveProducts();
+  let added = 0;
+  liveProducts.forEach(p => {
+    if (!Cart.hasItem(p.slug)) {
+      Cart.addItem(p.slug);
+      added++;
+    }
+  });
+  if (added > 0) {
+    Toast.show('Bundle Added', `${added} tool${added > 1 ? 's' : ''} added to cart — 50% off!`, 'success');
+  } else {
+    Toast.show('Already in Cart', 'All bundle tools are already in your cart.', 'info');
+  }
+  setTimeout(() => { window.location.href = 'cart.html'; }, 800);
+}
+
 // ===== DISCOUNT LOGIC =====
 const Discount = {
   THRESHOLD: 2,

@@ -179,13 +179,14 @@
 
   // Check if already logged in, skip sign-in step
   async function proceedToSignIn() {
-    const user = await Auth.getUser();
-    if (user) {
-      // Already logged in, skip to connect store
-      setStep(3);
-    } else {
-      setStep(2);
-    }
+    try {
+      const user = await Auth.getUser();
+      if (user) {
+        setStep(3);
+        return;
+      }
+    } catch {}
+    setStep(2);
   }
 
   // ===== STEP 2: SIGN IN (Magic Link) =====
@@ -414,27 +415,20 @@
 
   // ===== INIT: Handle magic link callback & auto-advance =====
   async function initCart() {
-    // Check if returning from magic link (Supabase puts tokens in URL hash)
-    if (window.location.hash && window.location.hash.includes('access_token')) {
-      // Supabase JS client auto-picks up the session from the hash
-      // Wait a moment for it to process
-      await new Promise(r => setTimeout(r, 500));
+    try {
+      // Check if returning from magic link (Supabase puts tokens in URL hash)
+      if (window.location.hash && window.location.hash.includes('access_token')) {
+        await new Promise(r => setTimeout(r, 500));
 
-      const user = await Auth.getUser();
-      if (user) {
-        // Clean URL hash
-        history.replaceState(null, '', window.location.pathname);
-        // User just authenticated, go to connect store
-        setStep(3);
-        return;
+        const user = await Auth.getUser();
+        if (user) {
+          history.replaceState(null, '', window.location.pathname);
+          setStep(3);
+          return;
+        }
       }
-    }
-
-    // Check if already logged in
-    const user = await Auth.getUser();
-    if (user && Cart.count() > 0) {
-      // Already logged in with items in cart — maybe returning from OAuth
-      // Stay on step 1, let user proceed
+    } catch (e) {
+      console.warn('Auth check failed:', e);
     }
 
     setStep(1);
