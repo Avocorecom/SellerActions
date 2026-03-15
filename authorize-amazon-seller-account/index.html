@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amazon Authorization — SellerActions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="nav" id="mainNav"></nav>
+
+<section class="cart-page">
+  <div class="container">
+    <div class="section-header">
+      <h2 id="authTitle">Connecting Your Amazon Account...</h2>
+      <p id="authDesc">Please wait while we complete the authorization.</p>
+    </div>
+
+    <div class="cart-content" id="authContent">
+      <div class="success-container" id="loadingState">
+        <div class="success-icon" style="animation: pulse 1.5s ease-in-out infinite;">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M12 2v4m0 12v4m-7.07-3.93l2.83-2.83m8.49-8.49l2.83-2.83M2 12h4m12 0h4m-3.93 7.07l-2.83-2.83M7.76 7.76L4.93 4.93"/>
+          </svg>
+        </div>
+        <p style="color:var(--text-secondary);">Processing your Amazon authorization...</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer" id="mainFooter"></footer>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+  renderNav('');
+  renderFooter();
+
+  const params = new URLSearchParams(window.location.search);
+  const oauthCode = params.get('spapi_oauth_code');
+  const state = params.get('state');
+  const sellingPartnerId = params.get('selling_partner_id');
+
+  async function processAuthorization() {
+    const authContent = document.getElementById('authContent');
+    const authTitle = document.getElementById('authTitle');
+    const authDesc = document.getElementById('authDesc');
+
+    if (!oauthCode) {
+      authTitle.textContent = 'Authorization Failed';
+      authDesc.textContent = 'No authorization code received from Amazon.';
+      authContent.innerHTML = `
+        <div class="success-container">
+          <div class="success-icon" style="background:rgba(239,68,68,0.1); color:#ef4444;">
+            <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+          </div>
+          <h2>Something went wrong</h2>
+          <p style="color:var(--text-secondary);">We couldn't complete the Amazon authorization. Please try again.</p>
+          <div style="display:flex; gap:12px; justify-content:center; margin-top:24px;">
+            <a href="cart.html" class="btn-primary">Try Again</a>
+            <a href="index.html" class="btn-secondary">Back to Home</a>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    // Send authorization data to Formspree
+    try {
+      await fetch('https://formspree.io/f/xeogrgbo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'amazon_oauth_callback',
+          spapi_oauth_code: oauthCode,
+          selling_partner_id: sellingPartnerId || '',
+          state: state || '',
+          timestamp: new Date().toISOString()
+        })
+      });
+    } catch (e) {
+      console.error('Failed to submit authorization data:', e);
+    }
+
+    // Show success
+    authTitle.textContent = 'Amazon Account Connected!';
+    authDesc.textContent = '';
+    authContent.innerHTML = `
+      <div class="success-container">
+        <div class="success-icon">
+          <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h2>Your Amazon Account is Connected</h2>
+        <p style="color:var(--text-secondary);">
+          ${sellingPartnerId ? `Seller ID: <strong>${sellingPartnerId}</strong><br>` : ''}
+          ${state ? `Store: <strong>${decodeURIComponent(state)}</strong><br>` : ''}
+          Your 14-day free trial is now active. We'll send you a confirmation email with your dashboard access shortly.
+        </p>
+        <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:24px; text-align:left; margin:24px 0 32px;">
+          <h4 style="margin-bottom:12px; font-size:0.92rem;">What happens next:</h4>
+          <ul style="display:flex; flex-direction:column; gap:10px;">
+            <li style="display:flex; align-items:flex-start; gap:10px; font-size:0.88rem; color:var(--text-secondary);">
+              <svg fill="none" stroke="#10b981" stroke-width="2.5" viewBox="0 0 24 24" style="width:18px;height:18px;flex-shrink:0;margin-top:1px;"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Check your email for login credentials and setup guide</span>
+            </li>
+            <li style="display:flex; align-items:flex-start; gap:10px; font-size:0.88rem; color:var(--text-secondary);">
+              <svg fill="none" stroke="#10b981" stroke-width="2.5" viewBox="0 0 24 24" style="width:18px;height:18px;flex-shrink:0;margin-top:1px;"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Your tools will start syncing Amazon data automatically</span>
+            </li>
+            <li style="display:flex; align-items:flex-start; gap:10px; font-size:0.88rem; color:var(--text-secondary);">
+              <svg fill="none" stroke="#10b981" stroke-width="2.5" viewBox="0 0 24 24" style="width:18px;height:18px;flex-shrink:0;margin-top:1px;"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Trial ends in 14 days — you'll be reminded before any charge</span>
+            </li>
+          </ul>
+        </div>
+        <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+          <a href="index.html" class="btn-primary">Back to Home</a>
+        </div>
+      </div>
+    `;
+
+    Cart.clear();
+  }
+
+  processAuthorization();
+</script>
+
+<style>
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.95); }
+  }
+</style>
+</body>
+</html>
