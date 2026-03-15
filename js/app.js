@@ -593,7 +593,7 @@ function renderFooter() {
       </div>
       <div class="footer-bottom">
         <p>&copy; 2026 SellerActions. All rights reserved.</p>
-        <p>Built for sellers, by sellers.</p>
+        <p style="font-size:0.72rem; color:var(--text-muted); margin-top:4px;">v1.4.0 · deployed 2026-03-15 13:15 UTC</p>
       </div>
     </div>
   `;
