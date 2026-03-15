@@ -197,9 +197,10 @@
   const featuredProducts = getFeaturedProducts().sort((a, b) => b.score - a.score);
   document.getElementById('featuredGrid').innerHTML = featuredProducts.map(renderToolCard).join('');
 
-  // Bundle grid - group products by category
+  // Bundle grid - only live products, grouped by category
+  const liveProducts = getLiveProducts();
   const bundleCats = {};
-  PRODUCTS.forEach(p => {
+  liveProducts.forEach(p => {
     const catName = CATEGORIES[p.cat]?.name || p.cat;
     if (!bundleCats[catName]) bundleCats[catName] = [];
     bundleCats[catName].push(p);
@@ -220,7 +221,7 @@
     bundleHtml += '</div>';
   });
   document.getElementById('bundleGrid').innerHTML = bundleHtml;
-  document.getElementById('bundleAppCount').textContent = `${PRODUCTS.length} apps. 1 subscription. $49/month.`;
+  document.getElementById('bundleAppCount').textContent = `${liveProducts.length} apps. 1 subscription. $49/month.`;
 
   // Category grid
   document.getElementById('categoryGrid').innerHTML = Object.keys(CATEGORIES).map(renderCategoryCard).join('');
