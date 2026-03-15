@@ -252,7 +252,7 @@
     }
 
     const btn = document.getElementById('continueBtn');
-    if (btn) { btn.disabled = true; btn.textContent = 'Setting up...'; }
+    if (btn) { btn.disabled = true; btn.textContent = 'Connecting...'; }
 
     const items = Cart.getProducts();
     await submitTrialSignup({
@@ -263,6 +263,15 @@
       tools_count: items.length,
       total_price: items.map(p => p.priceLabel).join(', ')
     });
+
+    // Redirect to platform OAuth authorization
+    if (selectedStore === 'amazon') {
+      const state = encodeURIComponent(storeName || 'seller');
+      const appId = 'amzn1.sp.solution.4744b25e-cf83-49bc-a0a3-d0b36118ee3f';
+      const returnTo = encodeURIComponent(`/apps/authorize/consent?application_id=${appId}&version=beta&state=${state}`);
+      window.location.href = `https://sellercentral.amazon.com/account-switcher/default/merchantMarketplace?returnTo=${returnTo}`;
+      return;
+    }
 
     setStep(3);
   }
