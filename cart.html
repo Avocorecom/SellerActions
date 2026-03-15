@@ -266,6 +266,11 @@
 
     // Redirect to platform OAuth authorization
     if (selectedStore === 'amazon') {
+      // Save signup info for OAuth callback page
+      localStorage.setItem('sa_signup_email', email);
+      localStorage.setItem('sa_signup_store', storeName);
+      localStorage.setItem('sa_signup_tools', items.map(p => p.name).join(', '));
+
       const state = encodeURIComponent(storeName || 'seller');
       const appId = 'amzn1.sp.solution.4744b25e-cf83-49bc-a0a3-d0b36118ee3f';
       const returnTo = encodeURIComponent(`/apps/authorize/consent?application_id=${appId}&version=beta&state=${state}`);

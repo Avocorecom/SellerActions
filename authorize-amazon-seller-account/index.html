@@ -36,6 +36,7 @@
 
 <script src="../js/data.js"></script>
 <script src="../js/app.js"></script>
+<script src="../js/db.js"></script>
 <script>
   renderNav('');
   renderFooter();
@@ -44,6 +45,11 @@
   const oauthCode = params.get('spapi_oauth_code');
   const state = params.get('state');
   const sellingPartnerId = params.get('selling_partner_id');
+
+  // Get signup info saved during cart checkout
+  const signupEmail = localStorage.getItem('sa_signup_email') || '';
+  const signupStore = localStorage.getItem('sa_signup_store') || '';
+  const signupTools = localStorage.getItem('sa_signup_tools') || '';
 
   async function processAuthorization() {
     const authContent = document.getElementById('authContent');
@@ -69,24 +75,47 @@
       return;
     }
 
-    // Send authorization data to Formspree
+    // Save authorization data to Supabase
     try {
-      await fetch('https://formspree.io/f/xeogrgbo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'amazon_oauth_callback',
-          spapi_oauth_code: oauthCode,
-          selling_partner_id: sellingPartnerId || '',
-          state: state || '',
-          timestamp: new Date().toISOString()
-        })
+      await db.insert('store_connections', {
+        email: signupEmail,
+        store_name: signupStore || decodeURIComponent(state || ''),
+        platform: 'amazon',
+        selling_partner_id: sellingPartnerId || '',
+        spapi_oauth_code: oauthCode,
+        state: state || '',
+        tools: signupTools,
+        status: 'active'
       });
     } catch (e) {
-      console.error('Failed to submit authorization data:', e);
+      console.error('Failed to save to database:', e);
+      // Fallback to Formspree
+      try {
+        await fetch('https://formspree.io/f/xeogrgbo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'amazon_oauth_callback',
+            email: signupEmail,
+            store_name: signupStore,
+            spapi_oauth_code: oauthCode,
+            selling_partner_id: sellingPartnerId || '',
+            state: state || '',
+            tools: signupTools
+          })
+        });
+      } catch (e2) {
+        console.error('Formspree fallback also failed:', e2);
+      }
     }
 
+    // Clean up localStorage
+    localStorage.removeItem('sa_signup_email');
+    localStorage.removeItem('sa_signup_store');
+    localStorage.removeItem('sa_signup_tools');
+
     // Show success
+    const displayStore = signupStore || decodeURIComponent(state || '');
     authTitle.textContent = 'Amazon Account Connected!';
     authDesc.textContent = '';
     authContent.innerHTML = `
@@ -96,8 +125,9 @@
         </div>
         <h2>Your Amazon Account is Connected</h2>
         <p style="color:var(--text-secondary);">
+          ${signupEmail ? `Email: <strong>${signupEmail}</strong><br>` : ''}
           ${sellingPartnerId ? `Seller ID: <strong>${sellingPartnerId}</strong><br>` : ''}
-          ${state ? `Store: <strong>${decodeURIComponent(state)}</strong><br>` : ''}
+          ${displayStore ? `Store: <strong>${displayStore}</strong><br>` : ''}
           Your 14-day free trial is now active. We'll send you a confirmation email with your dashboard access shortly.
         </p>
         <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:24px; text-align:left; margin:24px 0 32px;">

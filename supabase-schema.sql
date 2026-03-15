@@ -69,6 +69,33 @@ create policy "Anyone can unvote" on votes for delete using (true);
 create policy "Public can read comments" on comments for select using (true);
 create policy "Anyone can comment" on comments for insert with check (true);
 
+-- Store Connections (Amazon OAuth etc.)
+create table store_connections (
+  id uuid default gen_random_uuid() primary key,
+  email text,
+  store_name text,
+  platform text not null default 'amazon',
+  selling_partner_id text,
+  spapi_oauth_code text,
+  state text,
+  tools text,
+  status text default 'pending' check (status in ('pending', 'active', 'expired', 'revoked')),
+  created_at timestamptz default now()
+);
+
+create index idx_store_connections_email on store_connections(email);
+create index idx_store_connections_selling_partner on store_connections(selling_partner_id);
+
+alter table store_connections enable row level security;
+
+create policy "Anyone can insert store connections"
+  on store_connections for insert
+  with check (true);
+
+create policy "Public can read own store connections"
+  on store_connections for select
+  using (true);
+
 -- Seed some initial approved requests
 insert into feature_requests (title, description, platform, status, votes, created_at) values
   ('Inventory Demand Forecasting with AI', 'I need a tool that predicts when I''ll run out of stock based on sales velocity, seasonality, and trends. Current restock planning is all guesswork.', 'Amazon', 'popular', 47, '2026-03-01'),
