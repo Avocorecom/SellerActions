@@ -20,25 +20,8 @@
       <p id="cartPageDesc">Review your selected tools and connect your store to start the 14-day free trial.</p>
     </div>
 
-    <!-- Steps indicator -->
-    <div class="cart-steps" id="cartSteps">
-      <div class="cart-step active" data-step="1">
-        <div class="cart-step-num">1</div>
-        <span class="cart-step-label">Review Cart</span>
-      </div>
-      <div class="cart-step" data-step="2">
-        <div class="cart-step-num">2</div>
-        <span class="cart-step-label">Sign In</span>
-      </div>
-      <div class="cart-step" data-step="3">
-        <div class="cart-step-num">3</div>
-        <span class="cart-step-label">Connect Store</span>
-      </div>
-      <div class="cart-step" data-step="4">
-        <div class="cart-step-num">4</div>
-        <span class="cart-step-label">Start Trial</span>
-      </div>
-    </div>
+    <!-- Steps indicator (built dynamically based on cart contents) -->
+    <div class="cart-steps" id="cartSteps"></div>
 
     <!-- Cart content container -->
     <div class="cart-content" id="cartContent"></div>
@@ -62,23 +45,70 @@
   // Get current page URL for magic link redirect
   const REDIRECT_URL = window.location.origin + window.location.pathname;
 
+  // Check if any cart item requires extra integrations
+  function getRequiredIntegrations() {
+    const items = Cart.getProducts();
+    const integrations = [];
+    items.forEach(p => {
+      if (p.integrations && p.integrations.length > 0) {
+        p.integrations.forEach(intg => {
+          integrations.push({ ...intg, productSlug: p.slug, productName: p.name });
+        });
+      }
+    });
+    return integrations;
+  }
+
+  function hasIntegrationStep() {
+    return getRequiredIntegrations().length > 0;
+  }
+
+  // Dynamic step mapping: steps change based on whether integration step is needed
+  function getStepConfig() {
+    const base = [
+      { id: 'cart', label: 'Review Cart' },
+      { id: 'signin', label: 'Sign In' },
+      { id: 'connect', label: 'Connect Store' }
+    ];
+    if (hasIntegrationStep()) {
+      base.push({ id: 'integrations', label: 'Extra Setup' });
+    }
+    base.push({ id: 'success', label: 'Start Trial' });
+    return base;
+  }
+
+  function renderStepsIndicator() {
+    const steps = getStepConfig();
+    document.getElementById('cartSteps').innerHTML = steps.map((s, i) => `
+      <div class="cart-step ${i + 1 === currentStep ? 'active' : ''} ${i + 1 < currentStep ? 'completed' : ''}" data-step="${i + 1}">
+        <div class="cart-step-num">${i + 1}</div>
+        <span class="cart-step-label">${s.label}</span>
+      </div>
+    `).join('');
+  }
+
+  function getCurrentStepId() {
+    const steps = getStepConfig();
+    return steps[currentStep - 1]?.id || 'cart';
+  }
+
   function setStep(step) {
     currentStep = step;
-    document.querySelectorAll('.cart-step').forEach(el => {
-      const s = parseInt(el.dataset.step);
-      el.classList.remove('active', 'completed');
-      if (s === step) el.classList.add('active');
-      if (s < step) el.classList.add('completed');
-    });
+    renderStepsIndicator();
     renderStep();
   }
 
   function renderStep() {
-    if (currentStep === 1) renderCartStep();
-    else if (currentStep === 2) renderSignInStep();
-    else if (currentStep === 3) renderIntegrationStep();
-    else if (currentStep === 4) renderSuccessStep();
+    const stepId = getCurrentStepId();
+    if (stepId === 'cart') renderCartStep();
+    else if (stepId === 'signin') renderSignInStep();
+    else if (stepId === 'connect') renderIntegrationStep();
+    else if (stepId === 'integrations') renderExtraSetupStep();
+    else if (stepId === 'success') renderSuccessStep();
   }
+
+  function getNextStep() { return currentStep + 1; }
+  function getPrevStep() { return currentStep - 1; }
 
   // ===== STEP 1: CART REVIEW =====
   function renderCartStep() {
@@ -186,17 +216,22 @@
     renderCartStep();
   }
 
+  // Find step number by id
+  function stepNumFor(id) {
+    return getStepConfig().findIndex(s => s.id === id) + 1;
+  }
+
   // Check if already logged in, skip sign-in step
   async function proceedToSignIn() {
     try {
       const user = await Auth.getUser();
       if (user) {
         await saveSubscriptions();
-        setStep(3);
+        setStep(stepNumFor('connect'));
         return;
       }
     } catch {}
-    setStep(2);
+    setStep(stepNumFor('signin'));
   }
 
   // ===== STEP 2: SIGN IN (Magic Link) =====
@@ -211,7 +246,7 @@
           <input type="email" id="authEmail" placeholder="you@example.com">
         </div>
         <div style="display:flex; gap:12px; margin-top:24px; justify-content:space-between;">
-          <button class="btn-ghost" onclick="setStep(1)">Back</button>
+          <button class="btn-ghost" onclick="setStep(stepNumFor('cart'))">Back</button>
           <button class="btn-primary" id="sendMagicLinkBtn" onclick="sendMagicLink()">Send Magic Link &rarr;</button>
         </div>
       </div>
@@ -268,9 +303,9 @@
     } catch {}
 
     if (amazonConnected) {
-      // Amazon already connected, save subscriptions and go to success
+      // Amazon already connected, save subscriptions and go to next step
       await saveSubscriptions();
-      setStep(4);
+      goAfterConnect();
       return;
     }
 
@@ -311,7 +346,7 @@
       </div>
 
       <div style="display:flex; gap:12px; margin-top:32px; justify-content:space-between;">
-        <button class="btn-ghost" onclick="setStep(1)">Back to Cart</button>
+        <button class="btn-ghost" onclick="setStep(stepNumFor('cart'))">Back to Cart</button>
         <button class="btn-primary" id="continueBtn" onclick="handleIntegrationSubmit()" disabled>Continue &rarr;</button>
       </div>
     `;
@@ -358,9 +393,112 @@
       return;
     }
 
-    // For other platforms, save subscriptions and go to success
+    // For other platforms, save subscriptions and go to next step
     await saveSubscriptions();
-    setStep(4);
+    goAfterConnect();
+  }
+
+  // After Connect Store: go to integration step if needed, otherwise success
+  function goAfterConnect() {
+    if (hasIntegrationStep()) {
+      setStep(stepNumFor('integrations'));
+    } else {
+      setStep(stepNumFor('success'));
+    }
+  }
+
+  // ===== EXTRA SETUP STEP: Collect third-party API keys =====
+  function renderExtraSetupStep() {
+    const integrations = getRequiredIntegrations();
+
+    // Group by platform
+    const grouped = {};
+    integrations.forEach(intg => {
+      const key = intg.platform;
+      if (!grouped[key]) grouped[key] = { platform: key, productName: intg.productName, productSlug: intg.productSlug, fields: [] };
+      grouped[key].fields.push(intg);
+    });
+
+    document.getElementById('cartPageTitle').textContent = 'Extra Setup';
+    document.getElementById('cartPageDesc').textContent = 'Some of your selected tools require additional credentials to connect.';
+
+    const platformSections = Object.values(grouped).map(group => {
+      const fieldsHtml = group.fields.map(f => `
+        <div class="form-group">
+          <label for="intg_${f.platform}_${f.field}">${f.label}</label>
+          <input type="${f.type || 'text'}" id="intg_${f.platform}_${f.field}" placeholder="${f.placeholder || ''}" data-platform="${f.platform}" data-field="${f.field}" ${f.required ? 'required' : ''}>
+          ${f.helpText ? `<small style="color:var(--text-muted); font-size:0.78rem; margin-top:4px; display:block;">${f.helpText}</small>` : ''}
+        </div>
+      `).join('');
+
+      return `
+        <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:24px; margin-bottom:16px;">
+          <h4 style="margin-bottom:4px; font-size:0.95rem;">${group.platform.charAt(0).toUpperCase() + group.platform.slice(1)} Integration</h4>
+          <p style="color:var(--text-muted); font-size:0.82rem; margin-bottom:16px;">Required for: ${group.productName}</p>
+          ${fieldsHtml}
+        </div>
+      `;
+    }).join('');
+
+    cartContent.innerHTML = `
+      <div class="integration-setup-form">
+        ${platformSections}
+      </div>
+      <div style="display:flex; gap:12px; margin-top:24px; justify-content:space-between;">
+        <button class="btn-ghost" onclick="setStep(stepNumFor('connect'))">Back</button>
+        <div style="display:flex; gap:12px;">
+          <button class="btn-ghost" onclick="skipExtraSetup()">Skip for Now</button>
+          <button class="btn-primary" id="saveIntegrationsBtn" onclick="saveExtraSetup()">Save & Continue &rarr;</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function skipExtraSetup() {
+    setStep(stepNumFor('success'));
+  }
+
+  async function saveExtraSetup() {
+    const integrations = getRequiredIntegrations();
+    const btn = document.getElementById('saveIntegrationsBtn');
+
+    // Collect values grouped by platform
+    const platformData = {};
+    let hasError = false;
+
+    integrations.forEach(intg => {
+      const input = document.getElementById(`intg_${intg.platform}_${intg.field}`);
+      const value = input?.value?.trim() || '';
+      if (intg.required && !value) {
+        input.style.borderColor = 'var(--red)';
+        hasError = true;
+      } else if (input) {
+        input.style.borderColor = '';
+      }
+      if (!platformData[intg.platform]) platformData[intg.platform] = {};
+      platformData[intg.platform][intg.field] = value;
+    });
+
+    if (hasError) {
+      Toast.show('Required Fields', 'Please fill in all required fields.', 'info');
+      return;
+    }
+
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+
+    // Save each platform's credentials
+    for (const [platform, fields] of Object.entries(platformData)) {
+      try {
+        await UserDB.saveIntegrationCredential(platform, fields);
+      } catch (e) {
+        console.warn(`Failed to save ${platform} credentials:`, e);
+        // Store locally as fallback
+        localStorage.setItem(`sa_intg_${platform}`, JSON.stringify(fields));
+      }
+    }
+
+    Toast.show('Saved', 'Integration credentials saved successfully.', 'success');
+    setStep(stepNumFor('success'));
   }
 
   // Save cart items as user subscriptions in DB
@@ -386,8 +524,7 @@
     document.getElementById('cartPageTitle').textContent = 'You\'re All Set!';
     document.getElementById('cartPageDesc').textContent = '';
     document.querySelectorAll('.cart-step').forEach(el => {
-      const s = parseInt(el.dataset.step);
-      if (s <= 4) el.classList.add('completed');
+      el.classList.add('completed');
     });
 
     cartContent.innerHTML = `
@@ -426,6 +563,7 @@
 
   // ===== INIT: Handle magic link callback & auto-advance =====
   async function initCart() {
+    renderStepsIndicator();
     try {
       // Check if returning from magic link (Supabase puts tokens in URL hash)
       if (window.location.hash && window.location.hash.includes('access_token')) {
@@ -436,7 +574,7 @@
           history.replaceState(null, '', window.location.pathname);
           // Save subscriptions immediately after login
           await saveSubscriptions();
-          setStep(3);
+          setStep(stepNumFor('connect'));
           return;
         }
       }

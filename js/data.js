@@ -392,29 +392,33 @@ const PRODUCTS = [
     ]
   },
   {
-    slug: "veeqo-order-update",
-    name: "Veeqo Order Update",
-    shortDesc: "Push custom Amazon order updates into Veeqo for centralized fulfillment and shipping label management.",
-    longDesc: "If you use Veeqo for multi-channel fulfillment, keeping Amazon order data in sync is critical. This tool pushes custom Amazon order updates — status changes, tracking info, and custom fields — directly into Veeqo so your fulfillment team always has accurate, real-time data.",
+    slug: "amazon-custom-order-update-on-veeqo",
+    name: "Amazon Custom Order Update On Veeqo",
+    shortDesc: "Automate the process of retrieving customized data from Amazon Custom/Handmade orders and updating Veeqo — syncing every 15 minutes.",
+    longDesc: "If you sell personalized products on Amazon and have trouble because Veeqo is not fully integrated with Amazon Custom, SellerActions is the ultimate solution. We've developed an automated process that leverages Veeqo's open API to update customization details and import Amazon Handmade orders. Save time, avoid errors, and focus on growing your business — knowing that the tedious task of data management is taken care of.",
     price: 49.00,
     priceLabel: "$49/mo",
     cat: "multichannel",
     platforms: ["amazon"],
     live: true,
-    score: 7.2,
-    featured: false,
-    trialDays: 14,
+    score: 8.5,
+    featured: true,
+    trialDays: 7,
     features: [
-      { title: "Real-Time Order Push", desc: "Amazon orders sync to Veeqo as they come in — no delays." },
-      { title: "Custom Field Mapping", desc: "Map Amazon order fields to Veeqo's custom fields for your workflow." },
-      { title: "Status Sync", desc: "Order status updates flow bidirectionally between platforms." },
-      { title: "Error Recovery", desc: "Automatic retry logic ensures no orders are lost in transit." }
+      { title: "15-Minute Auto Sync", desc: "Customization data from Amazon is automatically retrieved and updated in Veeqo every 15 minutes." },
+      { title: "Amazon Custom & Handmade Support", desc: "Full support for Amazon Custom and Amazon Handmade personalized order data — font names, colors, custom text, and more." },
+      { title: "Multi-Field Updates", desc: "Update multiple fields on Veeqo simultaneously, ensuring all relevant customization information is accurate and up to date." },
+      { title: "Seamless Integration", desc: "Save time and avoid manual errors with a fully automated bridge between Amazon Custom orders and Veeqo." },
+      { title: "Zero Manual Work", desc: "Focus on growing your business — the tedious task of copying customization data between platforms is completely automated." }
     ],
-    useCases: ["Sellers using Veeqo as their primary fulfillment platform", "3PL providers managing Amazon orders through Veeqo", "Multi-channel sellers centralizing operations in Veeqo"],
+    useCases: ["Amazon sellers of personalized/customized products using Veeqo for fulfillment", "Amazon Handmade sellers who need customization details visible in Veeqo for production", "Print-on-demand and made-to-order businesses shipping through Veeqo"],
     howItWorks: [
-      { step: "Connect", desc: "Link your Amazon and Veeqo accounts." },
-      { step: "Map Fields", desc: "Configure how Amazon order data maps to Veeqo." },
-      { step: "Sync", desc: "Orders flow automatically with full status tracking." }
+      { step: "Register", desc: "Sign up on SellerActions and select your plan — starts at $49/mo with a 7-day free trial. Cancel anytime." },
+      { step: "Connect Amazon", desc: "Connect your Amazon Seller account with SellerActions by logging in with your Amazon Seller credentials." },
+      { step: "Submit Veeqo API Key", desc: "Submit your Veeqo API key — and you're done. Customization data starts syncing automatically every 15 minutes." }
+    ],
+    integrations: [
+      { platform: "veeqo", label: "Veeqo API Key", field: "api_key", type: "text", placeholder: "Enter your Veeqo API key", helpText: "Find your API key in Veeqo under Settings > API.", required: true }
     ]
   },
   {
@@ -441,6 +445,10 @@ const PRODUCTS = [
       { step: "Connect", desc: "Link your Amazon and ShipStation accounts." },
       { step: "Configure", desc: "Set up field mapping and order routing rules." },
       { step: "Ship", desc: "Orders flow in automatically and tracking syncs back to Amazon." }
+    ],
+    integrations: [
+      { platform: "shipstation", label: "ShipStation API Key", field: "api_key", type: "text", placeholder: "Enter your ShipStation API key", helpText: "Find your API key in ShipStation under Account > API Settings.", required: true },
+      { platform: "shipstation", label: "ShipStation API Secret", field: "api_secret", type: "password", placeholder: "Enter your ShipStation API secret", helpText: "The API secret is shown alongside the API key.", required: true }
     ]
   },
   {

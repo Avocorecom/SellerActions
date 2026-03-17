@@ -39,7 +39,7 @@
   <div class="container">
     <div class="cta-box">
       <h2>Ready to Protect Your Margins?</h2>
-      <p>Start your 14-day free trial. No credit card required. Cancel anytime.</p>
+      <p>Start your free trial. No credit card required. Cancel anytime.</p>
       <button class="btn-primary" id="ctaButton">Start Free Trial &rarr;</button>
     </div>
   </div>
@@ -105,7 +105,7 @@
         sidebarButtons = `<a class="btn-success btn-full" href="cart.html">&#10003; In Cart — Go to Checkout</a>`;
       } else {
         sidebarButtons = `
-          <button class="btn-primary btn-full" onclick="handleTryFree('${product.slug}')">Try 14 Days Free</button>
+          <button class="btn-primary btn-full" onclick="handleTryFree('${product.slug}')">Try ${product.trialDays} Days Free</button>
           <button class="btn-secondary btn-full btn-sm" onclick="handleAddToCart('${product.slug}')">+ Add to Cart</button>
         `;
       }
@@ -127,7 +127,7 @@
           <div class="product-meta">
             ${product.platforms.map(p => `<span class="tool-tag ${getPlatformClass(p)}">${getPlatformName(p)}</span>`).join('')}
             ${product.live ? '<span class="live-indicator"><span class="dot"></span> LIVE</span>' : ''}
-            <span class="trial-badge">14-day free trial</span>
+            <span class="trial-badge">${product.trialDays}-day free trial</span>
           </div>
           <p class="product-desc">${product.longDesc}</p>
           <div class="tool-score" style="font-size: 0.88rem;">
@@ -139,13 +139,13 @@
         </div>
         <div class="product-sidebar">
           <div class="product-sidebar-price">${product.priceLabel}</div>
-          <div class="product-sidebar-trial">14-day free trial · No credit card required</div>
+          <div class="product-sidebar-trial">${product.trialDays}-day free trial · No credit card required</div>
           ${sidebarButtons}
           <div style="text-align:center;margin-top:12px;padding:10px;background:rgba(251,191,36,0.08);border-radius:8px;font-size:0.8rem;color:var(--yellow);">
             Add 2+ tools → <strong>50% off</strong> after trial
           </div>
           <ul class="product-sidebar-features">
-            <li>${CHECK_ICON} <span>14-day free trial — no credit card</span></li>
+            <li>${CHECK_ICON} <span>${product.trialDays}-day free trial — no credit card</span></li>
             <li>${CHECK_ICON} <span>Cancel anytime, no contracts</span></li>
             <li>${CHECK_ICON} <span>Works with ${product.platforms.map(p => getPlatformName(p)).join(', ')}</span></li>
             <li>${CHECK_ICON} <span>Setup in under 2 minutes</span></li>

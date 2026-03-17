@@ -158,6 +158,34 @@ create policy "Users update own subscriptions"
   on user_subscriptions for update
   using (auth.uid() = user_id);
 
+-- Integration Credentials (third-party API keys: Veeqo, ShipStation, etc.)
+create table integration_credentials (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  platform text not null,
+  credentials jsonb not null default '{}',
+  status text default 'active' check (status in ('active', 'revoked')),
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  unique(user_id, platform)
+);
+
+create index idx_integration_creds_user on integration_credentials(user_id);
+
+alter table integration_credentials enable row level security;
+
+create policy "Users read own integration credentials"
+  on integration_credentials for select
+  using (auth.uid() = user_id);
+
+create policy "Users insert own integration credentials"
+  on integration_credentials for insert
+  with check (auth.uid() = user_id);
+
+create policy "Users update own integration credentials"
+  on integration_credentials for update
+  using (auth.uid() = user_id);
+
 -- Seed some initial approved requests
 insert into feature_requests (title, description, platform, status, votes, created_at) values
   ('Inventory Demand Forecasting with AI', 'I need a tool that predicts when I''ll run out of stock based on sales velocity, seasonality, and trends. Current restock planning is all guesswork.', 'Amazon', 'popular', 47, '2026-03-01'),

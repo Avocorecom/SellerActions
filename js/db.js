@@ -141,6 +141,24 @@ const UserDB = {
       product_name: p.name
     }));
     return db.insert('user_subscriptions', rows);
+  },
+
+  // Save third-party integration credentials (Veeqo API key, ShipStation keys, etc.)
+  async saveIntegrationCredential(platform, fields) {
+    const user = await Auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+    return db.insert('integration_credentials', {
+      user_id: user.id,
+      platform,
+      credentials: JSON.stringify(fields),
+      status: 'active'
+    });
+  },
+
+  async getIntegrationCredentials() {
+    const user = await Auth.getUser();
+    if (!user) return [];
+    return db.query('integration_credentials', `user_id=eq.${user.id}&order=created_at.desc`);
   }
 };
 
