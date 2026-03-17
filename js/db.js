@@ -162,6 +162,36 @@ const UserDB = {
   }
 };
 
+// ===== BACKEND API (via Supabase Edge Function) =====
+const BackendAPI = {
+  // Edge Function URL for tenant registration
+  EDGE_FUNCTION_URL: `${SUPABASE_URL}/functions/v1/register-tenant`,
+
+  // Register new tenant + connect Amazon store (no Stripe)
+  async registerTenant({ email, name, password, companyName, spapiOauthCode, sellingPartnerId, storeName, serviceTypeIds }) {
+    const res = await fetch(this.EDGE_FUNCTION_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+      },
+      body: JSON.stringify({
+        email,
+        name,
+        password,
+        companyName,
+        spapiOauthCode: spapiOauthCode || '',
+        sellingPartnerId: sellingPartnerId || '',
+        storeName: storeName || 'Amazon Store',
+        serviceTypeIds: serviceTypeIds || []
+      })
+    });
+    const data = await res.json();
+    if (!data.status) throw new Error(data.error || 'Registration failed');
+    return data.result;
+  }
+};
+
 // ===== FEATURE REQUESTS =====
 const RequestsDB = {
   CACHE_KEY: 'sa_requests_cache',

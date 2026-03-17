@@ -46,7 +46,6 @@
   const oauthCode = params.get('spapi_oauth_code');
   const state = params.get('state');
   const sellingPartnerId = params.get('selling_partner_id');
-
   const signupStore = localStorage.getItem('sa_signup_store') || '';
 
   async function processAuthorization() {
@@ -55,28 +54,14 @@
     const authDesc = document.getElementById('authDesc');
 
     if (!oauthCode) {
-      authTitle.textContent = 'Authorization Failed';
-      authDesc.textContent = 'No authorization code received from Amazon.';
-      authContent.innerHTML = `
-        <div class="success-container">
-          <div class="success-icon" style="background:rgba(239,68,68,0.1); color:#ef4444;">
-            <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
-          </div>
-          <h2>Something went wrong</h2>
-          <p style="color:var(--text-secondary);">We couldn't complete the Amazon authorization. Please try again.</p>
-          <div style="display:flex; gap:12px; justify-content:center; margin-top:24px;">
-            <a href="../cart.html" class="btn-primary">Try Again</a>
-            <a href="../index.html" class="btn-secondary">Back to Home</a>
-          </div>
-        </div>
-      `;
+      showError(authTitle, authContent, 'No authorization code received from Amazon.');
       return;
     }
 
-    const user = await Auth.getUser();
     const displayStore = signupStore || decodeURIComponent(state || '');
 
-    // Save to store_credentials (authenticated) or store_connections (fallback)
+    // Save OAuth data to Supabase (keep existing behavior)
+    const user = await Auth.getUser();
     if (user) {
       try {
         await UserDB.saveStoreCredential({
@@ -89,18 +74,7 @@
       } catch (e) {
         console.error('Failed to save store credential:', e);
       }
-
-      // Save cart items as subscriptions
-      const items = Cart.getProducts();
-      if (items.length > 0) {
-        try {
-          await UserDB.addSubscriptions(items);
-        } catch (e) {
-          console.warn('Failed to save subscriptions:', e);
-        }
-      }
     } else {
-      // Not authenticated — save to legacy store_connections
       try {
         await db.insert('store_connections', {
           store_name: displayStore,
@@ -115,48 +89,200 @@
       }
     }
 
-    // Clean up
     localStorage.removeItem('sa_signup_store');
 
-    // Show success
+    // Show registration form
     authTitle.textContent = 'Amazon Account Connected!';
-    authDesc.textContent = '';
+    authDesc.textContent = 'Complete your registration to start using SellerActions.';
+
+    // Get cart items for service IDs
+    const cartItems = Cart.getProducts();
+
     authContent.innerHTML = `
       <div class="success-container">
         <div class="success-icon">
-          <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" width="48" height="48"><polyline points="20 6 9 17 4 12"/></svg>
         </div>
         <h2>Your Amazon Account is Connected</h2>
-        <p style="color:var(--text-secondary);">
-          ${user ? `Signed in as <strong>${user.email}</strong><br>` : ''}
+        <p style="color:var(--text-secondary); margin-bottom:8px;">
           ${sellingPartnerId ? `Seller ID: <strong>${sellingPartnerId}</strong><br>` : ''}
-          ${displayStore ? `Store: <strong>${displayStore}</strong><br>` : ''}
-          Your 14-day free trial is now active.
+          ${displayStore ? `Store: <strong>${displayStore}</strong>` : ''}
         </p>
-        <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:24px; text-align:left; margin:24px 0 32px;">
-          <h4 style="margin-bottom:12px; font-size:0.92rem;">What happens next:</h4>
-          <ul style="display:flex; flex-direction:column; gap:10px;">
-            <li style="display:flex; align-items:flex-start; gap:10px; font-size:0.88rem; color:var(--text-secondary);">
-              <svg fill="none" stroke="#10b981" stroke-width="2.5" viewBox="0 0 24 24" style="width:18px;height:18px;flex-shrink:0;margin-top:1px;"><polyline points="20 6 9 17 4 12"/></svg>
-              <span>Your tools are now active in your dashboard</span>
-            </li>
-            <li style="display:flex; align-items:flex-start; gap:10px; font-size:0.88rem; color:var(--text-secondary);">
-              <svg fill="none" stroke="#10b981" stroke-width="2.5" viewBox="0 0 24 24" style="width:18px;height:18px;flex-shrink:0;margin-top:1px;"><polyline points="20 6 9 17 4 12"/></svg>
-              <span>Data will start syncing Amazon data automatically</span>
-            </li>
-            <li style="display:flex; align-items:flex-start; gap:10px; font-size:0.88rem; color:var(--text-secondary);">
-              <svg fill="none" stroke="#10b981" stroke-width="2.5" viewBox="0 0 24 24" style="width:18px;height:18px;flex-shrink:0;margin-top:1px;"><polyline points="20 6 9 17 4 12"/></svg>
-              <span>Trial ends in 14 days — you'll be reminded before any charge</span>
-            </li>
-          </ul>
-        </div>
-        <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
-          ${user ? `<a href="../dashboard.html" class="btn-primary">Go to Dashboard</a>` : `<a href="../index.html" class="btn-primary">Back to Home</a>`}
+
+        <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:28px; text-align:left; margin:24px 0; max-width:480px; width:100%;">
+          <h4 style="margin-bottom:16px; font-size:1rem;">Complete Your Registration</h4>
+          <div class="form-group" style="margin-bottom:14px;">
+            <label for="regEmail">Email Address</label>
+            <input type="email" id="regEmail" placeholder="you@example.com" value="${user?.email || ''}">
+          </div>
+          <div class="form-group" style="margin-bottom:14px;">
+            <label for="regName">Full Name</label>
+            <input type="text" id="regName" placeholder="John Doe">
+          </div>
+          <div class="form-group" style="margin-bottom:14px;">
+            <label for="regCompany">Company / Store Name</label>
+            <input type="text" id="regCompany" placeholder="My Brand" value="${displayStore}">
+          </div>
+          <div class="form-group" style="margin-bottom:14px;">
+            <label for="regPassword">Password</label>
+            <input type="password" id="regPassword" placeholder="Min 6 characters">
+          </div>
+          <div class="form-group" style="margin-bottom:20px;">
+            <label for="regPasswordConfirm">Confirm Password</label>
+            <input type="password" id="regPasswordConfirm" placeholder="Repeat password">
+          </div>
+          <button class="btn-primary btn-full" id="registerBtn" onclick="handleRegistration()">
+            Create Account & Start Trial &rarr;
+          </button>
+          <p style="font-size:0.75rem; color:var(--text-muted); margin-top:10px; text-align:center;">
+            Free trial — no credit card required.
+          </p>
         </div>
       </div>
     `;
+  }
 
-    Cart.clear();
+  async function handleRegistration() {
+    const email = document.getElementById('regEmail')?.value?.trim();
+    const name = document.getElementById('regName')?.value?.trim();
+    const companyName = document.getElementById('regCompany')?.value?.trim();
+    const password = document.getElementById('regPassword')?.value;
+    const passwordConfirm = document.getElementById('regPasswordConfirm')?.value;
+    const btn = document.getElementById('registerBtn');
+
+    // Validation
+    if (!email || !name || !companyName || !password) {
+      Toast.show('Missing Fields', 'Please fill in all fields.', 'info');
+      return;
+    }
+    if (password.length < 6) {
+      Toast.show('Weak Password', 'Password must be at least 6 characters.', 'info');
+      return;
+    }
+    if (password !== passwordConfirm) {
+      Toast.show('Password Mismatch', 'Passwords do not match.', 'info');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Creating your account...';
+
+    try {
+      // Get serviceTypeIds from cart items (from product metadata)
+      const cartItems = Cart.getProducts();
+      // For now, we pass product slugs - backend serviceTypeIds should be mapped
+      // TODO: Add serviceTypeId to product data when backend IDs are known
+
+      const result = await BackendAPI.registerTenant({
+        email,
+        name,
+        password,
+        companyName,
+        spapiOauthCode: oauthCode,
+        sellingPartnerId: sellingPartnerId || '',
+        storeName: companyName,
+        serviceTypeIds: []
+      });
+
+      // Save subscriptions to Supabase too
+      if (cartItems.length > 0) {
+        try {
+          await UserDB.addSubscriptions(cartItems);
+        } catch (e) {
+          console.warn('Failed to save subscriptions to Supabase:', e);
+        }
+      }
+
+      // Show success
+      showSuccess(result, email, cartItems);
+      Cart.clear();
+
+    } catch (error) {
+      console.error('Registration error:', error);
+      Toast.show('Registration Failed', error.message || 'Please try again.', 'error');
+      btn.disabled = false;
+      btn.textContent = 'Create Account & Start Trial →';
+    }
+  }
+
+  function showSuccess(result, email, items) {
+    const authTitle = document.getElementById('authTitle');
+    const authDesc = document.getElementById('authDesc');
+    const authContent = document.getElementById('authContent');
+
+    authTitle.textContent = "You're All Set!";
+    authDesc.textContent = '';
+
+    // Check if any cart items have integrations (Veeqo, ShipStation, etc.)
+    const integrations = [];
+    items.forEach(p => {
+      if (p.integrations && p.integrations.length > 0) {
+        p.integrations.forEach(intg => {
+          const platformName = intg.platform.charAt(0).toUpperCase() + intg.platform.slice(1);
+          if (!integrations.includes(platformName)) integrations.push(platformName);
+        });
+      }
+    });
+
+    const integrationMsg = integrations.length > 0
+      ? `<li style="display:flex; align-items:flex-start; gap:10px; font-size:0.88rem; color:var(--accent);">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0; margin-top:2px;"><path d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"/></svg>
+          <span>After registration, you can check your ${integrations.join(' / ')} data within 2 hours.</span>
+        </li>`
+      : '';
+
+    authContent.innerHTML = `
+      <div class="success-container">
+        <div class="success-icon">
+          <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" width="48" height="48"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h2>Your Free Trial Has Started!</h2>
+        <p style="color:var(--text-secondary);">
+          Signed in as <strong>${email}</strong>.<br>
+          ${sellingPartnerId ? `Seller ID: <strong>${sellingPartnerId}</strong><br>` : ''}
+          We're setting up <strong>${items.length} tool${items.length !== 1 ? 's' : ''}</strong> for your store.
+        </p>
+        <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:24px; text-align:left; margin:24px 0 32px;">
+          <h4 style="margin-bottom:12px; font-size:0.92rem;">What happens next:</h4>
+          <ul style="display:flex; flex-direction:column; gap:10px; list-style:none;">
+            <li style="display:flex; align-items:flex-start; gap:10px; font-size:0.88rem; color:var(--text-secondary);">
+              <svg width="18" height="18" fill="none" stroke="var(--green)" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0; margin-top:2px;"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Your tools are now active in your dashboard</span>
+            </li>
+            <li style="display:flex; align-items:flex-start; gap:10px; font-size:0.88rem; color:var(--text-secondary);">
+              <svg width="18" height="18" fill="none" stroke="var(--green)" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0; margin-top:2px;"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Data will start syncing Amazon data automatically</span>
+            </li>
+            <li style="display:flex; align-items:flex-start; gap:10px; font-size:0.88rem; color:var(--text-secondary);">
+              <svg width="18" height="18" fill="none" stroke="var(--green)" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0; margin-top:2px;"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>You'll be reminded before any charge at the end of your trial</span>
+            </li>
+            ${integrationMsg}
+          </ul>
+        </div>
+        <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+          <a href="../dashboard.html" class="btn-primary">Go to Dashboard</a>
+          <a href="../index.html" class="btn-secondary">Back to Home</a>
+        </div>
+      </div>
+    `;
+  }
+
+  function showError(titleEl, contentEl, message) {
+    titleEl.textContent = 'Authorization Failed';
+    contentEl.innerHTML = `
+      <div class="success-container">
+        <div class="success-icon" style="background:rgba(239,68,68,0.1); color:#ef4444;">
+          <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+        </div>
+        <h2>Something went wrong</h2>
+        <p style="color:var(--text-secondary);">${message}</p>
+        <div style="display:flex; gap:12px; justify-content:center; margin-top:24px;">
+          <a href="../cart.html" class="btn-primary">Try Again</a>
+          <a href="../index.html" class="btn-secondary">Back to Home</a>
+        </div>
+      </div>
+    `;
   }
 
   processAuthorization();
