@@ -527,28 +527,44 @@
       el.classList.add('completed');
     });
 
+    // Build integration-specific messages
+    const integrations = getRequiredIntegrations();
+    const integrationMessages = integrations.length > 0
+      ? integrations.map(intg => {
+          const platformName = intg.platform.charAt(0).toUpperCase() + intg.platform.slice(1);
+          return `<li style="display:flex; align-items:flex-start; gap:10px; font-size:0.88rem; color:var(--accent);">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0; margin-top:2px;"><path d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"/></svg>
+            <span>After registration, you can check your ${platformName} data within 2 hours.</span>
+          </li>`;
+        }).filter((v, i, a) => a.indexOf(v) === i).join('')
+      : '';
+
     cartContent.innerHTML = `
       <div class="success-container">
         <div class="success-icon">
-          <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" width="48" height="48"><polyline points="20 6 9 17 4 12"/></svg>
         </div>
-        <h2>Your 14-Day Free Trial Has Started!</h2>
+        <h2>Your Free Trial Has Started!</h2>
         <p>
           ${user ? `Signed in as <strong>${user.email}</strong>.<br>` : ''}
           We're setting up <strong>${items.length} tool${items.length > 1 ? 's' : ''}</strong> for ${storeName}.
         </p>
         <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:24px; text-align:left; margin-bottom:32px;">
           <h4 style="margin-bottom:12px; font-size:0.92rem;">What happens next:</h4>
-          <ul style="display:flex; flex-direction:column; gap:10px;">
+          <ul style="display:flex; flex-direction:column; gap:10px; list-style:none;">
             <li style="display:flex; align-items:flex-start; gap:10px; font-size:0.88rem; color:var(--text-secondary);">
-              ${CHECK_ICON} <span>Your tools are now active in your dashboard</span>
+              <svg width="18" height="18" fill="none" stroke="var(--green)" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0; margin-top:2px;"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Your tools are now active in your dashboard</span>
             </li>
             <li style="display:flex; align-items:flex-start; gap:10px; font-size:0.88rem; color:var(--text-secondary);">
-              ${CHECK_ICON} <span>Data will start syncing automatically once connected</span>
+              <svg width="18" height="18" fill="none" stroke="var(--green)" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0; margin-top:2px;"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Data will start syncing automatically once connected</span>
             </li>
             <li style="display:flex; align-items:flex-start; gap:10px; font-size:0.88rem; color:var(--text-secondary);">
-              ${CHECK_ICON} <span>Trial ends in 14 days — you'll be reminded before any charge</span>
+              <svg width="18" height="18" fill="none" stroke="var(--green)" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0; margin-top:2px;"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>You'll be reminded before any charge at the end of your trial</span>
             </li>
+            ${integrationMessages}
           </ul>
         </div>
         <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
