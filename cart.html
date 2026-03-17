@@ -296,19 +296,6 @@
     const items = Cart.getProducts();
     const allPlatforms = [...new Set(items.flatMap(p => p.platforms))];
 
-    // Check if Amazon is already connected
-    let amazonConnected = false;
-    try {
-      amazonConnected = await UserDB.hasAmazonConnected();
-    } catch {}
-
-    if (amazonConnected) {
-      // Amazon already connected, save subscriptions and go to next step
-      await saveSubscriptions();
-      goAfterConnect();
-      return;
-    }
-
     const storeOptions = [
       { id: 'amazon', name: 'Amazon', icon: '📦', desc: 'Seller Central / SP-API' },
       { id: 'shopify', name: 'Shopify', icon: '🛍️', desc: 'Shopify Admin API' },
