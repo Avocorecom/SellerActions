@@ -296,6 +296,15 @@
     const items = Cart.getProducts();
     const allPlatforms = [...new Set(items.flatMap(p => p.platforms))];
 
+    // Check if Amazon is already connected
+    let connectedStores = [];
+    try {
+      const creds = await UserDB.getStoreCredentials();
+      connectedStores = creds.filter(c => c.status === 'active');
+    } catch {}
+
+    const amazonCred = connectedStores.find(c => c.platform === 'amazon');
+
     const storeOptions = [
       { id: 'amazon', name: 'Amazon', icon: '📦', desc: 'Seller Central / SP-API' },
       { id: 'shopify', name: 'Shopify', icon: '🛍️', desc: 'Shopify Admin API' },
@@ -310,17 +319,39 @@
     );
 
     document.getElementById('cartPageTitle').textContent = 'Connect Your Store';
-    document.getElementById('cartPageDesc').textContent = 'Select the platform you want to connect first. You can add more later.';
+    document.getElementById('cartPageDesc').textContent = amazonCred
+      ? 'Your Amazon account is connected. You can reconnect or continue.'
+      : 'Select the platform you want to connect first. You can add more later.';
+
+    const connectedBanner = amazonCred ? `
+      <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); border-radius:12px; padding:16px 20px; margin-bottom:20px; display:flex; align-items:center; gap:12px; justify-content:space-between; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <svg width="20" height="20" fill="none" stroke="var(--green)" stroke-width="2.5" viewBox="0 0 24 24" style="flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>
+          <div>
+            <strong style="color:var(--green);">Amazon Connected</strong>
+            <span style="color:var(--text-muted); font-size:0.82rem; display:block;">
+              ${amazonCred.selling_partner_id ? `Seller ID: ${amazonCred.selling_partner_id}` : ''}
+              ${amazonCred.store_name ? ` &middot; ${amazonCred.store_name}` : ''}
+            </span>
+          </div>
+        </div>
+        <button class="btn-ghost" style="font-size:0.82rem;" onclick="reconnectAmazon()">Reconnect</button>
+      </div>
+    ` : '';
 
     cartContent.innerHTML = `
+      ${connectedBanner}
       <div class="store-options" id="storeOptions">
-        ${relevantStores.map(s => `
-          <div class="store-option" data-store="${s.id}" onclick="selectStore('${s.id}')">
-            <div class="store-option-icon">${s.icon}</div>
-            <div class="store-option-name">${s.name}</div>
-            <div class="store-option-desc">${s.desc}</div>
-          </div>
-        `).join('')}
+        ${relevantStores.map(s => {
+          const isConnected = connectedStores.some(c => c.platform === s.id);
+          return `
+            <div class="store-option ${isConnected ? 'selected' : ''}" data-store="${s.id}" onclick="selectStore('${s.id}')">
+              <div class="store-option-icon">${s.icon}</div>
+              <div class="store-option-name">${s.name} ${isConnected ? '<span style="color:var(--green); font-size:0.72rem;">Connected</span>' : ''}</div>
+              <div class="store-option-desc">${s.desc}</div>
+            </div>
+          `;
+        }).join('')}
       </div>
 
       <div id="integrationForm" style="display:none;">
@@ -334,9 +365,19 @@
 
       <div style="display:flex; gap:12px; margin-top:32px; justify-content:space-between;">
         <button class="btn-ghost" onclick="setStep(stepNumFor('cart'))">Back to Cart</button>
-        <button class="btn-primary" id="continueBtn" onclick="handleIntegrationSubmit()" disabled>Continue &rarr;</button>
+        <button class="btn-primary" id="continueBtn" onclick="handleIntegrationSubmit()" ${amazonCred ? '' : 'disabled'}>Continue &rarr;</button>
       </div>
     `;
+  }
+
+  function reconnectAmazon() {
+    selectedStore = 'amazon';
+    const form = document.getElementById('integrationForm');
+    form.style.display = 'block';
+    document.querySelectorAll('.store-option').forEach(el => {
+      el.classList.toggle('selected', el.dataset.store === 'amazon');
+    });
+    document.getElementById('continueBtn').disabled = false;
   }
 
   function selectStore(storeId) {
