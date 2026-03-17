@@ -394,6 +394,7 @@ const PRODUCTS = [
   {
     slug: "amazon-custom-order-update-on-veeqo",
     name: "Amazon Custom Order Update On Veeqo",
+    screenshot: "img/screenshots/veeqo-custom-order.png",
     shortDesc: "Automate the process of retrieving customized data from Amazon Custom/Handmade orders and updating Veeqo — syncing every 15 minutes.",
     longDesc: "If you sell personalized products on Amazon and have trouble because Veeqo is not fully integrated with Amazon Custom, SellerActions is the ultimate solution. We've developed an automated process that leverages Veeqo's open API to update customization details and import Amazon Handmade orders. Save time, avoid errors, and focus on growing your business — knowing that the tedious task of data management is taken care of.",
     price: 49.00,

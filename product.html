@@ -130,6 +130,7 @@
             <span class="trial-badge">${product.trialDays}-day free trial</span>
           </div>
           <p class="product-desc">${product.longDesc}</p>
+          ${product.screenshot ? `<img src="${product.screenshot}" alt="${product.name} screenshot" style="margin-top:20px; border-radius:var(--radius); border:1px solid var(--border); box-shadow:var(--shadow-md); max-width:100%;" loading="lazy">` : ''}
           <div class="tool-score" style="font-size: 0.88rem;">
             <span>Seller Impact Score: <strong>${product.score.toFixed(1)}</strong>/10</span>
             <div class="score-bar" style="width:80px;height:6px;">
