@@ -530,10 +530,24 @@ function renderNav(activePage) {
     Auth.getUser().then(user => {
       const authBtn = document.getElementById('navAuthBtn');
       if (authBtn && user) {
-        authBtn.innerHTML = `<a href="dashboard.html" class="btn-nav">Dashboard</a>`;
+        authBtn.innerHTML = `
+          <a href="dashboard.html" class="btn-nav">Dashboard</a>
+          <button class="btn-nav-logout" onclick="handleLogout()" title="Sign Out">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="18" height="18"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </button>
+        `;
       }
     }).catch(() => {});
   }
+}
+
+async function handleLogout() {
+  try {
+    await Auth.signOut();
+  } catch (e) {
+    console.warn('Logout error:', e);
+  }
+  window.location.href = 'index.html';
 }
 
 function toggleMobileMenu() {
@@ -542,14 +556,30 @@ function toggleMobileMenu() {
     menu = document.createElement('div');
     menu.id = 'mobileMenu';
     menu.className = 'mobile-menu';
-    menu.innerHTML = `
-      <a href="index.html">Home</a>
-      <a href="requests.html">Feature Requests</a>
-      <a href="cart.html">Cart</a>
-      <a href="dashboard.html">Dashboard</a>
-    `;
     document.body.appendChild(menu);
   }
+
+  // Build menu with auth-aware items
+  const baseLinks = `
+    <a href="index.html">Home</a>
+    <a href="requests.html">Feature Requests</a>
+    <a href="cart.html">Cart</a>
+  `;
+
+  if (typeof Auth !== 'undefined') {
+    Auth.getUser().then(user => {
+      menu.innerHTML = baseLinks + (user
+        ? `<a href="dashboard.html">Dashboard</a>
+           <a href="#" onclick="event.preventDefault(); handleLogout();" style="color:var(--red);">Sign Out</a>`
+        : `<a href="cart.html">Start Free Trial</a>`
+      );
+    }).catch(() => {
+      menu.innerHTML = baseLinks + `<a href="cart.html">Start Free Trial</a>`;
+    });
+  } else {
+    menu.innerHTML = baseLinks + `<a href="cart.html">Start Free Trial</a>`;
+  }
+
   menu.classList.toggle('open');
 }
 
