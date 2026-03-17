@@ -423,29 +423,31 @@ const PRODUCTS = [
     ]
   },
   {
-    slug: "shipstation-order-update",
-    name: "ShipStation Order Update",
-    shortDesc: "Sync Amazon order data into ShipStation with custom field mapping for streamlined 3PL workflows.",
-    longDesc: "ShipStation is a powerhouse for shipping, but Amazon's order data doesn't always flow in cleanly. This tool syncs Amazon order data into ShipStation with custom field mapping — ensuring your 3PL workflows run smoothly and every order ships on time.",
+    slug: "amazon-custom-order-update-on-shipstation",
+    name: "Amazon Custom Order Update On ShipStation",
+    screenshot: "img/screenshots/shipstation-custom-order.png",
+    shortDesc: "Automate the process of retrieving customized data from Amazon Custom/Handmade orders and updating ShipStation — syncing every 15 minutes.",
+    longDesc: "If you sell personalized products on Amazon and have trouble because ShipStation is not fully integrated with Amazon Custom, SellerActions is the ultimate solution. We've developed an automated process that leverages ShipStation's open API to update customization details and import Amazon Handmade orders. Save time, avoid errors, and focus on growing your business — knowing that the tedious task of data management is taken care of.",
     price: 49.00,
     priceLabel: "$49/mo",
     cat: "multichannel",
     platforms: ["amazon"],
     live: true,
-    score: 7.2,
-    featured: false,
-    trialDays: 14,
+    score: 8.5,
+    featured: true,
+    trialDays: 7,
     features: [
-      { title: "Automated Order Import", desc: "Amazon orders automatically appear in ShipStation with all details." },
-      { title: "Custom Field Mapping", desc: "Map Amazon-specific fields to ShipStation for your exact workflow." },
-      { title: "Tracking Sync", desc: "Shipping tracking numbers push back to Amazon automatically." },
-      { title: "Batch Processing", desc: "Handle high-volume order flows without manual intervention." }
+      { title: "15-Minute Auto Sync", desc: "Customization data from Amazon is automatically retrieved and updated in ShipStation every 15 minutes." },
+      { title: "Amazon Custom & Handmade Support", desc: "Full support for Amazon Custom and Amazon Handmade personalized order data — font names, colors, custom text, and more." },
+      { title: "Multi-Field Updates", desc: "Update multiple fields on ShipStation simultaneously, ensuring all relevant customization information is accurate and up to date." },
+      { title: "Seamless Integration", desc: "Save time and avoid manual errors with a fully automated bridge between Amazon Custom orders and ShipStation." },
+      { title: "Zero Manual Work", desc: "Focus on growing your business — the tedious task of copying customization data between platforms is completely automated." }
     ],
-    useCases: ["High-volume Amazon sellers using ShipStation for shipping", "3PL providers processing Amazon orders through ShipStation", "Sellers needing custom order data in their shipping workflow"],
+    useCases: ["Amazon sellers of personalized/customized products using ShipStation for fulfillment", "Amazon Handmade sellers who need customization details visible in ShipStation for production", "Print-on-demand and made-to-order businesses shipping through ShipStation"],
     howItWorks: [
-      { step: "Connect", desc: "Link your Amazon and ShipStation accounts." },
-      { step: "Configure", desc: "Set up field mapping and order routing rules." },
-      { step: "Ship", desc: "Orders flow in automatically and tracking syncs back to Amazon." }
+      { step: "Register", desc: "Sign up on SellerActions and select your plan — starts at $49/mo with a 7-day free trial. Cancel anytime." },
+      { step: "Connect Amazon", desc: "Connect your Amazon Seller account with SellerActions by logging in with your Amazon Seller credentials." },
+      { step: "Submit ShipStation API Key & Secret", desc: "Submit your ShipStation API key and API secret — and you're done. Customization data starts syncing automatically every 15 minutes." }
     ],
     integrations: [
       { platform: "shipstation", label: "ShipStation API Key", field: "api_key", type: "text", placeholder: "Enter your ShipStation API key", helpText: "Find your API key in ShipStation under Account > API Settings.", required: true },

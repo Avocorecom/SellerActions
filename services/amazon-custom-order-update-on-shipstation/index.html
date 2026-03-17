@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amazon Custom Order Update On ShipStation — SellerActions</title>
+  <meta name="description" content="Automate the process of retrieving customized data from Amazon Custom & Handmade orders and updating ShipStation. Syncing every 15 minutes.">
+  <meta property="og:title" content="Amazon Custom Order Update On ShipStation — SellerActions">
+  <meta property="og:description" content="The Ultimate Solution for Amazon Sellers of Customized Products. Automated sync between Amazon Custom Orders and ShipStation every 15 minutes.">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/style.css">
+  <style>
+    .lp-hero {
+      background: linear-gradient(135deg, #0891b2 0%, #0e7490 50%, #155e75 100%);
+      color: #fff;
+      padding: 80px 0 60px;
+      position: relative;
+      overflow: hidden;
+    }
+    .lp-hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -20%;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+    .lp-hero-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: center;
+    }
+    .lp-hero h1 {
+      font-size: 2.4rem;
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 16px;
+    }
+    .lp-hero h1 span {
+      color: #fbbf24;
+    }
+    .lp-hero .subtitle {
+      font-size: 1.1rem;
+      opacity: 0.9;
+      line-height: 1.7;
+      margin-bottom: 28px;
+    }
+    .lp-hero-cta {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .lp-hero-cta .btn-primary {
+      background: #fbbf24;
+      color: #1a1f2e;
+      font-weight: 700;
+      padding: 14px 32px;
+      font-size: 1rem;
+      border-radius: var(--radius);
+      border: none;
+    }
+    .lp-hero-cta .btn-primary:hover {
+      background: #f59e0b;
+    }
+    .lp-hero-cta .btn-outline {
+      background: transparent;
+      color: #fff;
+      border: 2px solid rgba(255,255,255,0.4);
+      padding: 12px 28px;
+      font-size: 1rem;
+      border-radius: var(--radius);
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .lp-hero-cta .btn-outline:hover {
+      border-color: #fff;
+      background: rgba(255,255,255,0.1);
+    }
+    .lp-screenshot {
+      border-radius: var(--radius-lg);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      border: 2px solid rgba(255,255,255,0.15);
+    }
+    .lp-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.15);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      backdrop-filter: blur(8px);
+    }
+    .lp-badge .dot {
+      width: 8px;
+      height: 8px;
+      background: #4ade80;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* Problem section */
+    .lp-problem {
+      background: var(--bg-secondary);
+      padding: 64px 0;
+    }
+    .lp-problem-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      margin-top: 40px;
+    }
+    .lp-problem-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+    }
+    .lp-problem-card .icon {
+      font-size: 1.5rem;
+      margin-bottom: 12px;
+    }
+    .lp-problem-card h4 {
+      font-size: 1rem;
+      margin-bottom: 8px;
+    }
+    .lp-problem-card p {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* Benefits section */
+    .lp-benefits {
+      padding: 72px 0;
+    }
+    .lp-benefits-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+      margin-top: 40px;
+    }
+    .lp-benefit-card {
+      text-align: center;
+      padding: 32px 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      transition: var(--transition);
+    }
+    .lp-benefit-card:hover {
+      border-color: var(--accent);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+    .lp-benefit-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--accent-glow);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin: 0 auto 16px;
+    }
+    .lp-benefit-card h4 {
+      font-size: 0.95rem;
+      margin-bottom: 8px;
+    }
+    .lp-benefit-card p {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* How it works */
+    .lp-how {
+      background: var(--bg-secondary);
+      padding: 72px 0;
+    }
+    .lp-steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+      margin-top: 40px;
+    }
+    .lp-step {
+      text-align: center;
+      position: relative;
+      padding: 32px 24px;
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+    .lp-step-num {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+    }
+    .lp-step h3 {
+      font-size: 1.05rem;
+      margin-bottom: 8px;
+    }
+    .lp-step p {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* Screenshot showcase */
+    .lp-showcase {
+      padding: 72px 0;
+    }
+    .lp-showcase-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: center;
+    }
+    .lp-showcase-img {
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-lg);
+    }
+    .lp-showcase-content h2 {
+      font-size: 1.8rem;
+      margin-bottom: 16px;
+    }
+    .lp-showcase-content p {
+      color: var(--text-secondary);
+      line-height: 1.7;
+      margin-bottom: 20px;
+    }
+    .lp-showcase-list {
+      list-style: none;
+    }
+    .lp-showcase-list li {
+      padding: 8px 0;
+      font-size: 0.92rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .lp-showcase-list li svg {
+      flex-shrink: 0;
+      margin-top: 3px;
+      color: var(--green);
+    }
+
+    /* Pricing */
+    .lp-pricing {
+      background: var(--bg-secondary);
+      padding: 72px 0;
+    }
+    .lp-pricing-box {
+      max-width: 480px;
+      margin: 32px auto 0;
+      background: var(--bg-card);
+      border: 2px solid var(--accent);
+      border-radius: var(--radius-lg);
+      padding: 40px;
+      text-align: center;
+      position: relative;
+    }
+    .lp-pricing-badge {
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent);
+      color: #fff;
+      padding: 4px 20px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .lp-pricing-price {
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .lp-pricing-price span {
+      font-size: 1rem;
+      font-weight: 400;
+      color: var(--text-secondary);
+    }
+    .lp-pricing-trial {
+      color: var(--green);
+      font-weight: 600;
+      margin: 8px 0 24px;
+    }
+    .lp-pricing-features {
+      list-style: none;
+      text-align: left;
+      margin-bottom: 28px;
+    }
+    .lp-pricing-features li {
+      padding: 8px 0;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-secondary);
+    }
+    .lp-pricing-features li svg {
+      color: var(--green);
+      flex-shrink: 0;
+    }
+
+    /* FAQ */
+    .lp-faq {
+      padding: 72px 0;
+    }
+    .lp-faq-list {
+      max-width: 700px;
+      margin: 32px auto 0;
+    }
+    .lp-faq-item {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 12px;
+      overflow: hidden;
+      background: var(--bg-card);
+    }
+    .lp-faq-q {
+      width: 100%;
+      text-align: left;
+      padding: 18px 24px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      background: none;
+      border: none;
+      color: var(--text-primary);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .lp-faq-q:hover {
+      background: var(--bg-surface);
+    }
+    .lp-faq-q .arrow {
+      transition: transform 0.3s ease;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .lp-faq-item.open .lp-faq-q .arrow {
+      transform: rotate(180deg);
+    }
+    .lp-faq-a {
+      padding: 0 24px;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, padding 0.3s ease;
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+    .lp-faq-item.open .lp-faq-a {
+      max-height: 300px;
+      padding: 0 24px 18px;
+    }
+
+    /* CTA bottom */
+    .lp-cta-bottom {
+      background: linear-gradient(135deg, #0891b2, #0e7490);
+      padding: 64px 0;
+      text-align: center;
+      color: #fff;
+    }
+    .lp-cta-bottom h2 {
+      font-size: 2rem;
+      margin-bottom: 12px;
+    }
+    .lp-cta-bottom p {
+      opacity: 0.9;
+      margin-bottom: 28px;
+      font-size: 1.05rem;
+    }
+    .lp-cta-bottom .btn-primary {
+      background: #fbbf24;
+      color: #1a1f2e;
+      font-weight: 700;
+      padding: 14px 36px;
+      font-size: 1.05rem;
+      border-radius: var(--radius);
+      border: none;
+    }
+    .lp-cta-bottom .btn-primary:hover {
+      background: #f59e0b;
+    }
+
+    @media (max-width: 768px) {
+      .lp-hero-inner { grid-template-columns: 1fr; text-align: center; }
+      .lp-hero h1 { font-size: 1.8rem; }
+      .lp-hero-cta { justify-content: center; }
+      .lp-problem-grid { grid-template-columns: 1fr; }
+      .lp-benefits-grid { grid-template-columns: repeat(2, 1fr); }
+      .lp-steps { grid-template-columns: 1fr; }
+      .lp-showcase-inner { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+      .lp-benefits-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav" id="mainNav"></nav>
+
+<!-- Hero -->
+<section class="lp-hero">
+  <div class="container">
+    <div class="lp-hero-inner">
+      <div>
+        <div class="lp-badge"><span class="dot"></span> LIVE — Syncing Every 15 Minutes</div>
+        <h1>Amazon Custom Order Update <span>On ShipStation</span></h1>
+        <p class="subtitle">The Ultimate Solution for Amazon Sellers of Customized Products. Automate the process of retrieving customized data from Amazon and updating ShipStation seamlessly.</p>
+        <div class="lp-hero-cta">
+          <button class="btn-primary" onclick="handleAddToCart('amazon-custom-order-update-on-shipstation')">Start 7-Day Free Trial</button>
+          <a href="#howitworks" class="btn-outline">How It Works</a>
+        </div>
+      </div>
+      <div>
+        <img src="../../img/screenshots/shipstation-custom-order.png" alt="Customized Data From SellerActions synced into ShipStation order details" class="lp-screenshot" loading="lazy">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Problem -->
+<section class="lp-problem">
+  <div class="container">
+    <div class="section-header" style="text-align:center;">
+      <h2>The Problem</h2>
+      <p>ShipStation is not fully integrated with Amazon Custom — leaving sellers stuck with manual work.</p>
+    </div>
+    <div class="lp-problem-grid">
+      <div class="lp-problem-card">
+        <div class="icon">&#128532;</div>
+        <h4>Missing Customization Data</h4>
+        <p>ShipStation doesn't pull personalization details (font names, colors, custom text) from Amazon Custom orders, leaving your fulfillment team blind.</p>
+      </div>
+      <div class="lp-problem-card">
+        <div class="icon">&#9200;</div>
+        <h4>Manual Copy-Paste Nightmare</h4>
+        <p>Without automation, someone has to manually check each Amazon order and copy customization details into ShipStation — wasting hours every day.</p>
+      </div>
+      <div class="lp-problem-card">
+        <div class="icon">&#10060;</div>
+        <h4>Errors & Wrong Orders</h4>
+        <p>Manual data entry leads to mistakes — wrong names, wrong fonts, wrong colors — resulting in costly remakes and unhappy customers.</p>
+      </div>
+      <div class="lp-problem-card">
+        <div class="icon">&#128200;</div>
+        <h4>Can't Scale</h4>
+        <p>As order volume grows, manually handling customization data becomes unsustainable. You need automation to scale your personalized products business.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Benefits -->
+<section class="lp-benefits">
+  <div class="container">
+    <div class="section-header" style="text-align:center;">
+      <h2>Why SellerActions?</h2>
+      <p>An automated bridge between Amazon Custom Orders and ShipStation.</p>
+    </div>
+    <div class="lp-benefits-grid">
+      <div class="lp-benefit-card">
+        <div class="lp-benefit-icon">&#9889;</div>
+        <h4>15-Minute Auto Sync</h4>
+        <p>Customization data is automatically retrieved from Amazon and updated in ShipStation every 15 minutes.</p>
+      </div>
+      <div class="lp-benefit-card">
+        <div class="lp-benefit-icon">&#128170;</div>
+        <h4>Save Time</h4>
+        <p>Save time and avoid errors with seamless, fully automated integration between platforms.</p>
+      </div>
+      <div class="lp-benefit-card">
+        <div class="lp-benefit-icon">&#128221;</div>
+        <h4>Multi-Field Updates</h4>
+        <p>Update multiple fields on ShipStation, ensuring all relevant customization information is accurate and up to date.</p>
+      </div>
+      <div class="lp-benefit-card">
+        <div class="lp-benefit-icon">&#128640;</div>
+        <h4>Focus On Growth</h4>
+        <p>Focus on growing your business, knowing that the tedious task of data management is taken care of.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Screenshot Showcase -->
+<section class="lp-showcase" id="showcase">
+  <div class="container">
+    <div class="lp-showcase-inner">
+      <div>
+        <img src="../../img/screenshots/shipstation-custom-order.png" alt="ShipStation order with customized data from SellerActions" class="lp-showcase-img" loading="lazy">
+      </div>
+      <div class="lp-showcase-content">
+        <h2>See It In Action</h2>
+        <p>SellerActions automatically injects customization details directly into your ShipStation order view. Your fulfillment team sees everything they need — font names, colors, personalized text — without leaving ShipStation.</p>
+        <ul class="lp-showcase-list">
+          <li>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.3 4.3L6.3 11.3L2.7 7.7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Font Name, Font Color, and all custom text fields synced</span>
+          </li>
+          <li>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.3 4.3L6.3 11.3L2.7 7.7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Supports multiple personalization fields per order (Name 1, Name 2, etc.)</span>
+          </li>
+          <li>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.3 4.3L6.3 11.3L2.7 7.7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Works with Amazon Custom and Amazon Handmade orders</span>
+          </li>
+          <li>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.3 4.3L6.3 11.3L2.7 7.7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Data clearly labeled as "Customized Data From SellerActions"</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works -->
+<section class="lp-how" id="howitworks">
+  <div class="container">
+    <div class="section-header" style="text-align:center;">
+      <h2>How To Get Started</h2>
+      <p>Get up and running in 3 simple steps.</p>
+    </div>
+    <div class="lp-steps">
+      <div class="lp-step">
+        <div class="lp-step-num">1</div>
+        <h3>Register</h3>
+        <p>Sign up on SellerActions and select your membership plan. It starts from <strong>$49/month</strong> — we offer a <strong>7-day free trial</strong>, cancel anytime.</p>
+      </div>
+      <div class="lp-step">
+        <div class="lp-step-num">2</div>
+        <h3>Connect Amazon</h3>
+        <p>After registering, connect your Amazon Seller account with SellerActions. Log in with your Amazon Seller credentials to grant access.</p>
+      </div>
+      <div class="lp-step">
+        <div class="lp-step-num">3</div>
+        <h3>Submit ShipStation API Key &amp; Secret</h3>
+        <p>You're almost done! After your shop is created, submit your ShipStation API key and API secret. Customization data starts syncing automatically every 15 minutes.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pricing -->
+<section class="lp-pricing">
+  <div class="container">
+    <div class="section-header" style="text-align:center;">
+      <h2>Simple Pricing</h2>
+      <p>One plan. Everything included. No hidden fees.</p>
+    </div>
+    <div class="lp-pricing-box">
+      <div class="lp-pricing-badge">7-Day Free Trial</div>
+      <div class="lp-pricing-price">$49 <span>/month</span></div>
+      <div class="lp-pricing-trial">Try free for 7 days &mdash; cancel anytime</div>
+      <ul class="lp-pricing-features">
+        <li>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.3 4.3L6.3 11.3L2.7 7.7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Auto sync every 15 minutes
+        </li>
+        <li>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.3 4.3L6.3 11.3L2.7 7.7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          All customization fields supported
+        </li>
+        <li>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.3 4.3L6.3 11.3L2.7 7.7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Amazon Custom & Handmade orders
+        </li>
+        <li>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.3 4.3L6.3 11.3L2.7 7.7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Email & chat support included
+        </li>
+        <li>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.3 4.3L6.3 11.3L2.7 7.7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          No credit card required for trial
+        </li>
+      </ul>
+      <button class="btn-primary btn-full" onclick="handleAddToCart('amazon-custom-order-update-on-shipstation')" style="font-size:1rem;padding:14px 0;">Start 7-Day Free Trial &rarr;</button>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="lp-faq" id="faq">
+  <div class="container">
+    <div class="section-header" style="text-align:center;">
+      <h2>Frequently Asked Questions</h2>
+    </div>
+    <div class="lp-faq-list">
+      <div class="lp-faq-item">
+        <button class="lp-faq-q" onclick="toggleFaq(this)">
+          How To Get Started With SellerActions?
+          <span class="arrow">&#9660;</span>
+        </button>
+        <div class="lp-faq-a">
+          <strong>Step 1:</strong> Register on the SellerActions website and select your membership plan. It starts from $49/month and we offer a 7-day free trial — you can cancel anytime.<br><br>
+          <strong>Step 2:</strong> After registering, connect your Amazon Seller account with SellerActions. Log in with your Amazon Seller credentials so SellerActions can access your order data.<br><br>
+          <strong>Step 3:</strong> Submit your ShipStation API key. After your shop is created successfully, you'll be redirected to a page to submit your ShipStation API key and API secret. That's it — syncing begins automatically.
+        </div>
+      </div>
+      <div class="lp-faq-item">
+        <button class="lp-faq-q" onclick="toggleFaq(this)">
+          How often does the data sync?
+          <span class="arrow">&#9660;</span>
+        </button>
+        <div class="lp-faq-a">
+          Customization data syncs every 15 minutes. This means any new Amazon Custom or Handmade order will have its personalization details updated in ShipStation within 15 minutes of being placed.
+        </div>
+      </div>
+      <div class="lp-faq-item">
+        <button class="lp-faq-q" onclick="toggleFaq(this)">
+          What customization fields are supported?
+          <span class="arrow">&#9660;</span>
+        </button>
+        <div class="lp-faq-a">
+          All Amazon Custom fields are supported — including font names, font colors, custom text fields (Name 1, Name 2, etc.), and any other personalization options you've configured on your Amazon listings.
+        </div>
+      </div>
+      <div class="lp-faq-item">
+        <button class="lp-faq-q" onclick="toggleFaq(this)">
+          Does this work with Amazon Handmade?
+          <span class="arrow">&#9660;</span>
+        </button>
+        <div class="lp-faq-a">
+          Yes! SellerActions fully supports both Amazon Custom and Amazon Handmade orders. All personalization and customization data is retrieved and synced to ShipStation automatically.
+        </div>
+      </div>
+      <div class="lp-faq-item">
+        <button class="lp-faq-q" onclick="toggleFaq(this)">
+          Can I cancel anytime?
+          <span class="arrow">&#9660;</span>
+        </button>
+        <div class="lp-faq-a">
+          Absolutely. There are no contracts or commitments. You can cancel your subscription at any time. The 7-day free trial requires no credit card — so there's zero risk to try it out.
+        </div>
+      </div>
+      <div class="lp-faq-item">
+        <button class="lp-faq-q" onclick="toggleFaq(this)">
+          Where do I find my ShipStation API key and secret?
+          <span class="arrow">&#9660;</span>
+        </button>
+        <div class="lp-faq-a">
+          You can find your ShipStation API key and API secret in ShipStation under Account > API Settings. Both the key and secret are displayed together. If you need help, our support team can walk you through it.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Bottom -->
+<section class="lp-cta-bottom">
+  <div class="container">
+    <h2>Ready to Automate Your Custom Orders?</h2>
+    <p>Stop copying customization data manually. Let SellerActions handle it.</p>
+    <button class="btn-primary" onclick="handleAddToCart('amazon-custom-order-update-on-shipstation')">Start 7-Day Free Trial &rarr;</button>
+  </div>
+</section>
+
+<footer class="footer" id="mainFooter"></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js"></script>
+<script src="../../js/data.js"></script>
+<script src="../../js/db.js"></script>
+<script src="../../js/app.js"></script>
+<script>
+  renderNav('tools');
+  renderFooter();
+
+  function toggleFaq(btn) {
+    const item = btn.parentElement;
+    const wasOpen = item.classList.contains('open');
+    document.querySelectorAll('.lp-faq-item').forEach(el => el.classList.remove('open'));
+    if (!wasOpen) item.classList.add('open');
+  }
+</script>
+</body>
+</html>
