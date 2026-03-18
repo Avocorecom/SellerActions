@@ -84,6 +84,10 @@ Deno.serve(async (req) => {
       stripeSubscriptionId: "",
     }));
 
+    // Trial end date: 14 days from now
+    const trialEnd = new Date();
+    trialEnd.setDate(trialEnd.getDate() + 14);
+
     const tenantData = {
       tenancyName,
       name,
@@ -91,6 +95,7 @@ Deno.serve(async (req) => {
       adminPassword: password,
       editionId: null,
       isInTrialPeriod: true,
+      subscriptionEndDateUtc: trialEnd.toISOString(),
       isActive: true,
       platformName: "SellerActions",
       serviceTypeIdList,
