@@ -302,7 +302,7 @@ async function sendWelcomeEmail(
         </div>
 
         <div style="text-align:center; margin:28px 0;">
-          <a href="https://avocorecom.github.io/SellerActions/dashboard.html"
+          <a href="https://selleractions.com/dashboard.html"
              style="display:inline-block; background:linear-gradient(135deg,#00c2d1,#6366f1); color:#fff; padding:14px 36px; border-radius:8px; font-weight:600; font-size:14px; text-decoration:none;">
             Go to Dashboard
           </a>
@@ -311,7 +311,7 @@ async function sendWelcomeEmail(
         <div style="text-align:center; border-top:1px solid #1e293b; padding-top:24px; margin-top:16px;">
           <p style="color:#475569; font-size:12px; margin:0;">
             &copy; 2026 SellerActions. All rights reserved.<br>
-            <a href="https://avocorecom.github.io/SellerActions/" style="color:#64748b; text-decoration:none;">selleractions.com</a>
+            <a href="https://selleractions.com/" style="color:#64748b; text-decoration:none;">selleractions.com</a>
           </p>
         </div>
       </div>
