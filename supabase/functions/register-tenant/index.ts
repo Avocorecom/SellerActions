@@ -102,23 +102,47 @@ Deno.serve(async (req) => {
       customerId: "",
     };
 
-    const createTenantRes = await backendPost(
-      `${API_URL}/services/app/Tenant/CreateTenant`,
-      tenantData,
-      adminToken,
-    );
+    let tenantToken: string;
+    let customerId: string;
+    let tenantId: string | undefined;
+    let isExistingUser = false;
 
-    if (createTenantRes.error) {
-      return jsonRes(
-        {
-          status: false,
-          error: createTenantRes.error?.message || "Failed to create tenant",
-        },
-        400,
+    // Try creating tenant
+    let createTenantRes: any;
+    try {
+      createTenantRes = await backendPost(
+        `${API_URL}/services/app/Tenant/CreateTenant`,
+        tenantData,
+        adminToken,
       );
+    } catch (e: any) {
+      // If email already exists, try logging in with existing credentials
+      const errMsg = (e.message || "").toLowerCase();
+      if (errMsg.includes("already") || errMsg.includes("exist") || errMsg.includes("duplicate")) {
+        isExistingUser = true;
+      } else {
+        return jsonRes({ status: false, error: e.message || "Failed to create tenant" }, 400);
+      }
     }
 
-    // ===== STEP 3: Login as new tenant admin =====
+    // Also check structured error response
+    if (createTenantRes?.error) {
+      const errMsg = (createTenantRes.error?.message || "").toLowerCase();
+      if (errMsg.includes("already") || errMsg.includes("exist") || errMsg.includes("duplicate")) {
+        isExistingUser = true;
+      } else {
+        return jsonRes(
+          { status: false, error: createTenantRes.error?.message || "Failed to create tenant" },
+          400,
+        );
+      }
+    }
+
+    if (!isExistingUser) {
+      tenantId = createTenantRes?.result?.tenantId;
+    }
+
+    // ===== STEP 3: Login as tenant admin (new or existing) =====
     const tenantLoginRes = await backendPost(
       `${API_URL}/TokenAuth/Authenticate`,
       {
@@ -131,15 +155,16 @@ Deno.serve(async (req) => {
       return jsonRes(
         {
           status: false,
-          error: "Tenant created but login failed",
-          tenantCreated: true,
+          error: isExistingUser
+            ? "Account exists but login failed. Please check your password."
+            : "Tenant created but login failed",
         },
-        500,
+        isExistingUser ? 401 : 500,
       );
     }
 
-    const tenantToken = tenantLoginRes.result.accessToken;
-    const customerId = tenantLoginRes.result.customerId;
+    tenantToken = tenantLoginRes.result.accessToken;
+    customerId = tenantLoginRes.result.customerId;
 
     // ===== STEP 4: Grant Amazon store access (if OAuth data provided) =====
     let storeResult = null;
@@ -174,7 +199,8 @@ Deno.serve(async (req) => {
       result: {
         accessToken: tenantToken,
         customerId,
-        tenantId: createTenantRes.result?.tenantId,
+        tenantId,
+        isExistingUser,
         store: storeResult,
       },
     });
