@@ -137,6 +137,7 @@ const UserDB = {
     if (!user) throw new Error('Not authenticated');
     const rows = products.map(p => ({
       user_id: user.id,
+      email: user.email,
       product_slug: p.slug,
       product_name: p.name
     }));

@@ -508,6 +508,25 @@ function renderNav(activePage) {
       </a>
       <div class="nav-links" id="navLinks">
         <a href="index.html" class="${activePage === 'home' ? 'active' : ''}">Home</a>
+        <div class="nav-dropdown">
+          <a href="#" class="nav-dropdown-trigger ${activePage === 'tools' ? 'active' : ''}" onclick="event.preventDefault()">
+            Tools <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-left:3px;"><polyline points="6 9 12 15 18 9"/></svg>
+          </a>
+          <div class="nav-dropdown-menu" id="toolsDropdown">
+            ${Object.entries(CATEGORIES).map(([key, cat]) => {
+              const catProducts = PRODUCTS.filter(p => p.cat === key && p.live);
+              return `
+                <div class="nav-dropdown-group">
+                  <div class="nav-dropdown-cat">${cat.icon} ${cat.name}</div>
+                  ${catProducts.map(p => `
+                    <a href="product.html?slug=${p.slug}" class="nav-dropdown-item">${p.name}</a>
+                  `).join('')}
+                  ${catProducts.length === 0 ? `<span class="nav-dropdown-item" style="color:var(--text-muted);font-style:italic;">Coming soon</span>` : ''}
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
         <a href="requests.html" class="${activePage === 'requests' ? 'active' : ''}">Requests</a>
       </div>
       <div class="nav-right">
@@ -559,11 +578,24 @@ function toggleMobileMenu() {
     document.body.appendChild(menu);
   }
 
-  // Build menu with auth-aware items
+  // Build category + product links
+  const toolsLinks = Object.entries(CATEGORIES).map(([key, cat]) => {
+    const catProducts = (typeof PRODUCTS !== 'undefined')
+      ? PRODUCTS.filter(p => p.cat === key && p.live)
+      : [];
+    return `
+      <div style="padding:8px 0; border-top:1px solid var(--border);">
+        <a href="category.html?cat=${key}" style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); padding:4px 0; display:block;">${cat.icon} ${cat.name}</a>
+        ${catProducts.map(p => `<a href="product.html?slug=${p.slug}" style="padding-left:12px; font-size:0.82rem;">${p.name}</a>`).join('')}
+      </div>
+    `;
+  }).join('');
+
   const baseLinks = `
     <a href="index.html">Home</a>
     <a href="requests.html">Feature Requests</a>
-    <a href="cart.html">Cart</a>
+    ${toolsLinks}
+    <a href="cart.html" style="margin-top:8px;">Cart</a>
   `;
 
   if (typeof Auth !== 'undefined') {

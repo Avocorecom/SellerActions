@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Main Pages -->
+  <url><loc>https://selleractions.com/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://selleractions.com/cart.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://selleractions.com/requests.html</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://selleractions.com/dashboard.html</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+
+  <!-- Category Pages -->
+  <url><loc>https://selleractions.com/category.html?cat=financial</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/category.html?cat=cashflow</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/category.html?cat=reimbursement</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/category.html?cat=inventory</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/category.html?cat=listing</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/category.html?cat=ads</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/category.html?cat=returns</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/category.html?cat=operations</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/category.html?cat=multichannel</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+
+  <!-- Landing Pages -->
+  <url><loc>https://selleractions.com/services/amazon-custom-order-update-on-veeqo/</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://selleractions.com/services/amazon-custom-order-update-on-shipstation/</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+
+  <!-- Product Pages (Live) -->
+  <url><loc>https://selleractions.com/product.html?slug=buybox-watchdog</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=keyword-guardian-alert</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=ad-precision-analytics</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=suppressed-product-notification</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=order-guard-max</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=hijacker-report-service</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=review-request-for-amazon</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=fba-shipment-workflow</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=amazon-mfn-to-shopify</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=amazon-mfn-to-walmart</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=amazon-mfn-to-ebay</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=amazon-custom-order-update-on-veeqo</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=amazon-custom-order-update-on-shipstation</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=shipper-act</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=rufus-readiness-checker</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=ai-traffic-lens</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=pack-size-pivot-advisor</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=negative-margin-kill-switch</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=dd7-cashflow-planner</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=reserve-release-forecaster</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=cash-flow-forecaster</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=listing-drift-detector</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=ai-feed-readiness-checker</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=case-packet-builder</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=return-timer-safet-watchdog</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=reimbursement-recovery-copilot</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=fee-leak-auditor</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=catalog-diff-reporter</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=prep-compliance-qa</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=suppression-inbox</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=oversell-guard</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=bundle-sync-studio</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=fee-change-simulator</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=sku-margin-sentinel</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=tiktok-shop-profit-tracker</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=ad-spend-auto-pause</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=tariff-impact-calculator</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=manufacturing-cost-optimizer</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=app-sprawl-auditor</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=mcf-loss-refund-checker</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://selleractions.com/product.html?slug=ai-listing-consistency-checker</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+</urlset>
