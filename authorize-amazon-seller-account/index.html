@@ -168,10 +168,10 @@
     btn.textContent = 'Creating your account...';
 
     try {
-      // Get serviceTypeIds from cart items (from product metadata)
       const cartItems = Cart.getProducts();
-      // For now, we pass product slugs - backend serviceTypeIds should be mapped
-      // TODO: Add serviceTypeId to product data when backend IDs are known
+      const serviceTypeIds = cartItems
+        .filter(p => p.serviceTypeId)
+        .map(p => p.serviceTypeId);
 
       const result = await BackendAPI.registerTenant({
         email,
@@ -181,7 +181,7 @@
         spapiOauthCode: oauthCode,
         sellingPartnerId: sellingPartnerId || '',
         storeName: companyName,
-        serviceTypeIds: [],
+        serviceTypeIds,
         products: cartItems.map(p => ({ slug: p.slug, name: p.name }))
       });
 

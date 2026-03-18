@@ -180,6 +180,7 @@ const PRODUCTS = [
   },
   {
     slug: "suppressed-product-notification",
+    serviceTypeId: 11,
     name: "Suppressed Product Notification",
     shortDesc: "Instant alerts when any of your products get suppressed. Fix listing issues before they kill your sales velocity.",
     longDesc: "A suppressed listing means zero sales and zero visibility — and Amazon doesn't always notify you promptly. Our tool monitors your entire catalog and sends instant alerts the moment any product gets suppressed, with the specific reason and a fix recommendation.",
@@ -207,6 +208,7 @@ const PRODUCTS = [
   },
   {
     slug: "order-guard-max",
+    serviceTypeId: 17,
     name: "Order Guard Max",
     shortDesc: "Monitor maximum order quantity changes and protect against abuse or unexpected bulk purchases on your listings.",
     longDesc: "Unexpected changes to your maximum order quantity can lead to abuse — competitors buying out your stock, or customers placing abnormally large orders. Order Guard Max monitors these settings and alerts you instantly when something changes, protecting your inventory and revenue.",
@@ -233,6 +235,7 @@ const PRODUCTS = [
   },
   {
     slug: "hijacker-report-service",
+    serviceTypeId: 8,
     name: "Hijacker Report Service",
     shortDesc: "Detect unauthorized sellers on your listings and generate organized reports for Amazon Brand Registry complaints.",
     longDesc: "Unauthorized sellers on your listings can tank your pricing, damage your brand reputation, and steal your BuyBox. Hijacker Report Service automatically detects new sellers appearing on your ASINs and generates professionally organized complaint reports ready to submit through Brand Registry.",
@@ -260,6 +263,7 @@ const PRODUCTS = [
   },
   {
     slug: "review-request-for-amazon",
+    serviceTypeId: 7,
     name: "Review Request for Amazon",
     shortDesc: "Automate review request emails within Amazon's TOS. Boost your review velocity without risking account health.",
     longDesc: "Reviews drive conversions, but manually requesting them is tedious and inconsistent. This tool automates the 'Request a Review' button across all your orders — staying 100% within Amazon's Terms of Service — to maximize your review velocity without any risk to your account.",
@@ -313,6 +317,7 @@ const PRODUCTS = [
   },
   {
     slug: "amazon-mfn-to-shopify",
+    serviceTypeId: 6,
     name: "Amazon MFN to Shopify",
     shortDesc: "Sync your Amazon MFN orders, inventory, and fulfillment data directly into your Shopify store.",
     longDesc: "Selling on both Amazon and Shopify shouldn't mean double the work. This integration syncs your Amazon merchant-fulfilled orders, inventory levels, and fulfillment data directly into Shopify — keeping both channels in perfect sync without manual updates.",
@@ -340,6 +345,7 @@ const PRODUCTS = [
   },
   {
     slug: "amazon-mfn-to-walmart",
+    serviceTypeId: 9,
     name: "Amazon MFN to Walmart",
     shortDesc: "Cross-list and sync Amazon merchant-fulfilled products to Walmart Marketplace with inventory parity.",
     longDesc: "Expand to Walmart without the operational headache. This tool cross-lists your Amazon MFN products to Walmart Marketplace and keeps inventory synchronized in real-time — so you can tap into Walmart's growing customer base without overselling or manual updates.",
@@ -367,6 +373,7 @@ const PRODUCTS = [
   },
   {
     slug: "amazon-mfn-to-ebay",
+    serviceTypeId: 10,
     name: "Amazon MFN to eBay",
     shortDesc: "Expand to eBay by syncing your Amazon MFN catalog — listings, prices, and stock levels stay updated.",
     longDesc: "eBay remains one of the largest marketplaces globally, and expanding from Amazon is a natural growth move. This tool syncs your Amazon MFN catalog to eBay — keeping listings, prices, and stock levels automatically updated so you can sell more without more work.",
@@ -393,6 +400,7 @@ const PRODUCTS = [
   },
   {
     slug: "amazon-custom-order-update-on-veeqo",
+    serviceTypeId: 20,
     name: "Amazon Custom Order Update On Veeqo",
     screenshot: "img/screenshots/veeqo-custom-order.png",
     shortDesc: "Automate the process of retrieving customized data from Amazon Custom/Handmade orders and updating Veeqo — syncing every 15 minutes.",
@@ -424,6 +432,7 @@ const PRODUCTS = [
   },
   {
     slug: "amazon-custom-order-update-on-shipstation",
+    serviceTypeId: 3,
     name: "Amazon Custom Order Update On ShipStation",
     screenshot: "img/screenshots/shipstation-custom-order.png",
     shortDesc: "Automate the process of retrieving customized data from Amazon Custom/Handmade orders and updating ShipStation — syncing every 15 minutes.",
@@ -456,6 +465,7 @@ const PRODUCTS = [
   },
   {
     slug: "shipper-act",
+    serviceTypeId: 18,
     name: "Shipper Act",
     shortDesc: "Shipping carrier comparison and rate optimization. Find the best shipping rates across multiple carriers.",
     longDesc: "Shipping costs directly impact your margins, but comparing rates across carriers is time-consuming. Shipper Act compares rates from multiple carriers in real-time, helping you find the best price for every shipment — whether you're sending FBM orders or inventory to Amazon.",
