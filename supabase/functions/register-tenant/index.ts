@@ -339,7 +339,7 @@ async function sendWelcomeEmail(
   }
 }
 
-// Helper: POST to .NET backend API
+// Helper: POST to .NET backend API (with logging)
 async function backendPost(url: string, data: unknown, token?: string) {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -348,6 +348,12 @@ async function backendPost(url: string, data: unknown, token?: string) {
     headers["Authorization"] = `Bearer ${token}`;
   }
 
+  // Log request (mask sensitive fields)
+  const endpoint = url.replace(/https?:\/\/[^/]+/, "");
+  const safeData = maskSensitive(data);
+  console.log(`[API REQ] ${endpoint}`, JSON.stringify(safeData));
+
+  const startTime = Date.now();
   const res = await fetch(url, {
     method: "POST",
     headers,
@@ -355,12 +361,35 @@ async function backendPost(url: string, data: unknown, token?: string) {
   });
 
   const json = await res.json();
+  const duration = Date.now() - startTime;
+
+  // Log response (mask tokens)
+  const safeJson = maskSensitive(json);
+  console.log(`[API RES] ${endpoint} → ${res.status} (${duration}ms)`, JSON.stringify(safeJson));
 
   if (!res.ok && !json.result) {
     throw new Error(json.error?.message || `Backend error: ${res.status}`);
   }
 
   return json;
+}
+
+// Mask passwords, tokens, and keys in log output
+function maskSensitive(obj: unknown): unknown {
+  if (!obj || typeof obj !== "object") return obj;
+  const masked: Record<string, unknown> = { ...(obj as Record<string, unknown>) };
+  for (const key of Object.keys(masked)) {
+    const lk = key.toLowerCase();
+    if (lk.includes("password") || lk.includes("secret") || lk.includes("apikey")) {
+      masked[key] = "***";
+    } else if (lk.includes("token") || lk === "authorization") {
+      const val = String(masked[key] || "");
+      masked[key] = val.length > 10 ? val.slice(0, 8) + "..." : "***";
+    } else if (typeof masked[key] === "object" && masked[key] !== null) {
+      masked[key] = maskSensitive(masked[key]);
+    }
+  }
+  return masked;
 }
 
 // Helper: JSON response with CORS headers
