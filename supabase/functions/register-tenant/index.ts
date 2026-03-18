@@ -6,6 +6,7 @@
 //   BACKEND_API_URL    - e.g. https://v1host.analision.net/api
 //   BACKEND_ADMIN_USER - e.g. ApplicationUser@avocore.com
 //   BACKEND_ADMIN_PASS - admin password
+//   RESEND_API_KEY     - Resend.com API key for sending emails
 
 import "@supabase/functions-js/edge-runtime.d.ts";
 
@@ -41,6 +42,7 @@ Deno.serve(async (req) => {
       sellingPartnerId,
       storeName,
       serviceTypeIds, // array of serviceTypeId numbers, e.g. [5, 8]
+      products,       // array of { slug, name } from cart
     } = body;
 
     // Validate required fields
@@ -193,6 +195,15 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ===== STEP 5: Send welcome email =====
+    const productList = products || [];
+    try {
+      await sendWelcomeEmail(email, name, companyName, productList, trialEnd);
+    } catch (e) {
+      console.error("Welcome email failed:", e);
+      // Don't fail registration if email fails
+    }
+
     // ===== SUCCESS =====
     return jsonRes({
       status: true,
@@ -202,6 +213,7 @@ Deno.serve(async (req) => {
         tenantId,
         isExistingUser,
         store: storeResult,
+        products: productList,
       },
     });
   } catch (error) {
@@ -215,6 +227,117 @@ Deno.serve(async (req) => {
     );
   }
 });
+
+// Helper: Send welcome email via Resend
+async function sendWelcomeEmail(
+  email: string,
+  name: string,
+  companyName: string,
+  products: Array<{ slug: string; name: string }>,
+  trialEnd: Date,
+) {
+  const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+  if (!RESEND_API_KEY) {
+    console.warn("RESEND_API_KEY not set, skipping welcome email");
+    return;
+  }
+
+  const trialEndStr = trialEnd.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  const productRows = products.length > 0
+    ? products.map(p => `
+        <tr>
+          <td style="padding:10px 16px; border-bottom:1px solid #1e293b; color:#e2e8f0; font-size:14px;">${p.name}</td>
+          <td style="padding:10px 16px; border-bottom:1px solid #1e293b; color:#10b981; font-size:14px; text-align:right;">Active</td>
+        </tr>
+      `).join("")
+    : `<tr><td style="padding:10px 16px; color:#94a3b8; font-size:14px;" colspan="2">No tools selected yet</td></tr>`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="UTF-8"></head>
+    <body style="margin:0; padding:0; background:#0b0f1a; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+      <div style="max-width:560px; margin:0 auto; padding:40px 20px;">
+
+        <div style="text-align:center; margin-bottom:32px;">
+          <div style="display:inline-block; background:linear-gradient(135deg,#00c2d1,#6366f1); padding:10px 16px; border-radius:10px; color:#fff; font-weight:700; font-size:18px; letter-spacing:0.5px;">SA</div>
+          <h1 style="color:#ffffff; font-size:22px; margin:16px 0 4px;">Welcome to SellerActions!</h1>
+          <p style="color:#94a3b8; font-size:14px; margin:0;">Your free trial has started</p>
+        </div>
+
+        <div style="background:#111827; border:1px solid #1e293b; border-radius:12px; padding:28px; margin-bottom:24px;">
+          <p style="color:#e2e8f0; font-size:15px; margin:0 0 16px;">Hi <strong>${name}</strong>,</p>
+          <p style="color:#94a3b8; font-size:14px; line-height:1.6; margin:0 0 20px;">
+            Your account for <strong style="color:#e2e8f0;">${companyName}</strong> is ready.
+            Here's a summary of your setup:
+          </p>
+
+          <h3 style="color:#00c2d1; font-size:13px; text-transform:uppercase; letter-spacing:1px; margin:0 0 12px;">Your Tools</h3>
+          <table style="width:100%; border-collapse:collapse; background:#0d1117; border-radius:8px; overflow:hidden;">
+            <thead>
+              <tr style="background:#161b22;">
+                <th style="padding:10px 16px; text-align:left; color:#64748b; font-size:12px; text-transform:uppercase;">Tool</th>
+                <th style="padding:10px 16px; text-align:right; color:#64748b; font-size:12px; text-transform:uppercase;">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${productRows}
+            </tbody>
+          </table>
+        </div>
+
+        <div style="background:#111827; border:1px solid #1e293b; border-radius:12px; padding:24px; margin-bottom:24px;">
+          <h3 style="color:#e2e8f0; font-size:14px; margin:0 0 14px;">What's next:</h3>
+          <div style="color:#94a3b8; font-size:13px; line-height:1.8;">
+            <p style="margin:0;">&#10003; Your Amazon data will start syncing automatically</p>
+            <p style="margin:0;">&#10003; Tools are active in your dashboard</p>
+            <p style="margin:0;">&#10003; Free trial ends on <strong style="color:#fbbf24;">${trialEndStr}</strong></p>
+            <p style="margin:0;">&#10003; No charge until trial ends — we'll remind you before</p>
+          </div>
+        </div>
+
+        <div style="text-align:center; margin:28px 0;">
+          <a href="https://avocorecom.github.io/SellerActions/dashboard.html"
+             style="display:inline-block; background:linear-gradient(135deg,#00c2d1,#6366f1); color:#fff; padding:14px 36px; border-radius:8px; font-weight:600; font-size:14px; text-decoration:none;">
+            Go to Dashboard
+          </a>
+        </div>
+
+        <div style="text-align:center; border-top:1px solid #1e293b; padding-top:24px; margin-top:16px;">
+          <p style="color:#475569; font-size:12px; margin:0;">
+            &copy; 2026 SellerActions. All rights reserved.<br>
+            <a href="https://avocorecom.github.io/SellerActions/" style="color:#64748b; text-decoration:none;">selleractions.com</a>
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${RESEND_API_KEY}`,
+    },
+    body: JSON.stringify({
+      from: "SellerActions <noreply@selleractions.com>",
+      to: [email],
+      subject: `Welcome to SellerActions — ${products.length} tool${products.length !== 1 ? "s" : ""} activated!`,
+      html,
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    console.error("Resend error:", errText);
+  }
+}
 
 // Helper: POST to .NET backend API
 async function backendPost(url: string, data: unknown, token?: string) {

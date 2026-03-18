@@ -181,7 +181,8 @@
         spapiOauthCode: oauthCode,
         sellingPartnerId: sellingPartnerId || '',
         storeName: companyName,
-        serviceTypeIds: []
+        serviceTypeIds: [],
+        products: cartItems.map(p => ({ slug: p.slug, name: p.name }))
       });
 
       // Save subscriptions to Supabase too

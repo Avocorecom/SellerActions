@@ -168,7 +168,7 @@ const BackendAPI = {
   EDGE_FUNCTION_URL: `${SUPABASE_URL}/functions/v1/register-tenant`,
 
   // Register new tenant + connect Amazon store (no Stripe)
-  async registerTenant({ email, name, password, companyName, spapiOauthCode, sellingPartnerId, storeName, serviceTypeIds }) {
+  async registerTenant({ email, name, password, companyName, spapiOauthCode, sellingPartnerId, storeName, serviceTypeIds, products }) {
     const res = await fetch(this.EDGE_FUNCTION_URL, {
       method: 'POST',
       headers: {
@@ -183,7 +183,8 @@ const BackendAPI = {
         spapiOauthCode: spapiOauthCode || '',
         sellingPartnerId: sellingPartnerId || '',
         storeName: storeName || 'Amazon Store',
-        serviceTypeIds: serviceTypeIds || []
+        serviceTypeIds: serviceTypeIds || [],
+        products: products || []
       })
     });
     const data = await res.json();
