@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-3RVD73DJK5"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag("js", new Date());
+    gtag("config", "G-3RVD73DJK5");
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Dynamic title/meta injected by JS -->
+  <title>Loading… — SellerActions Blog</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .post-layout {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      gap: 48px;
+      align-items: start;
+      padding: 148px 0 80px;
+    }
+    .post-article { min-width: 0; }
+    .post-breadcrumb {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.82rem; color: var(--text-muted); margin-bottom: 24px;
+    }
+    .post-breadcrumb a { color: var(--text-secondary); transition: color .2s; }
+    .post-breadcrumb a:hover { color: var(--accent); }
+    .post-breadcrumb svg { width: 14px; height: 14px; }
+
+    .post-title {
+      font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+      font-weight: 700; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 20px;
+    }
+    .post-meta {
+      display: flex; flex-wrap: wrap; gap: 16px; align-items: center;
+      padding-bottom: 24px; margin-bottom: 32px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.82rem; color: var(--text-muted);
+    }
+    .post-tag {
+      background: var(--accent-glow); color: var(--accent);
+      border: 1px solid rgba(0,194,209,0.2);
+      padding: 3px 12px; border-radius: 100px;
+      font-size: 0.72rem; font-weight: 600;
+    }
+    .post-cover {
+      width: 100%; border-radius: var(--radius);
+      margin-bottom: 32px; aspect-ratio: 16/7;
+      object-fit: cover;
+    }
+
+    /* Article content styles */
+    .post-content {
+      font-size: 1rem; line-height: 1.8;
+      color: var(--text-secondary);
+    }
+    .post-content h1, .post-content h2, .post-content h3, .post-content h4 {
+      color: var(--text-primary); font-weight: 700;
+      margin: 32px 0 12px; line-height: 1.3;
+    }
+    .post-content h2 { font-size: 1.4rem; }
+    .post-content h3 { font-size: 1.15rem; }
+    .post-content h4 { font-size: 1rem; }
+    .post-content p { margin-bottom: 16px; }
+    .post-content ul, .post-content ol {
+      margin: 16px 0 16px 24px;
+    }
+    .post-content li { margin-bottom: 8px; }
+    .post-content strong { color: var(--text-primary); font-weight: 600; }
+    .post-content em { color: var(--accent); font-style: normal; }
+    .post-content a { color: var(--accent); text-decoration: underline; }
+    .post-content a:hover { color: var(--accent-dim); }
+    .post-content blockquote {
+      border-left: 3px solid var(--accent);
+      padding: 12px 20px; margin: 24px 0;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      color: var(--text-primary); font-style: italic;
+    }
+    .post-content code {
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--bg-secondary); padding: 2px 7px;
+      border-radius: 4px; font-size: 0.88em; color: var(--accent);
+    }
+    .post-content pre {
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 20px;
+      overflow-x: auto; margin: 20px 0;
+    }
+    .post-content pre code {
+      background: none; padding: 0; color: var(--text-primary);
+    }
+    .post-content img {
+      max-width: 100%; border-radius: var(--radius-sm);
+      margin: 16px 0;
+    }
+    .post-content table {
+      width: 100%; border-collapse: collapse; margin: 20px 0;
+      font-size: 0.9rem;
+    }
+    .post-content th, .post-content td {
+      padding: 10px 14px; text-align: left;
+      border: 1px solid var(--border);
+    }
+    .post-content th {
+      background: var(--bg-secondary); color: var(--text-primary);
+      font-weight: 600;
+    }
+    .post-content hr {
+      border: none; border-top: 1px solid var(--border); margin: 32px 0;
+    }
+
+    /* Sidebar */
+    .post-sidebar {
+      position: sticky; top: 88px;
+      display: flex; flex-direction: column; gap: 24px;
+    }
+    .sidebar-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 24px;
+    }
+    .sidebar-card h4 {
+      font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--text-muted); margin-bottom: 16px;
+    }
+    .toc-list { display: flex; flex-direction: column; gap: 6px; }
+    .toc-link {
+      font-size: 0.83rem; color: var(--text-secondary);
+      padding: 4px 0; transition: color .2s;
+      display: block; border-left: 2px solid transparent;
+      padding-left: 10px;
+    }
+    .toc-link:hover { color: var(--accent); border-left-color: var(--accent); }
+    .toc-link.toc-h3 { padding-left: 20px; font-size: 0.78rem; }
+
+    /* Skeleton */
+    .skeleton-line {
+      background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--bg-card-hover) 50%, var(--bg-secondary) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 4px;
+    }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+    @media (max-width: 900px) {
+      .post-layout { grid-template-columns: 1fr; padding-top: 110px; }
+      .post-sidebar { position: static; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav" id="mainNav"></nav>
+
+<div class="container">
+  <div class="post-layout">
+    <article class="post-article" id="postArticle">
+      <!-- Skeleton loader -->
+      <div class="post-breadcrumb">
+        <div class="skeleton-line" style="height:12px;width:200px;"></div>
+      </div>
+      <div class="skeleton-line" style="height:14px;width:120px;margin-bottom:16px;"></div>
+      <div class="skeleton-line" style="height:40px;width:90%;margin-bottom:8px;"></div>
+      <div class="skeleton-line" style="height:40px;width:70%;margin-bottom:24px;"></div>
+      <div class="skeleton-line" style="height:18px;width:50%;margin-bottom:32px;"></div>
+      <div class="skeleton-line" style="height:300px;width:100%;margin-bottom:32px;border-radius:12px;"></div>
+      ${[100,90,100,80,95,85,75,90,100,85].map(w => `
+      <div class="skeleton-line" style="height:14px;width:${w}%;margin-bottom:10px;"></div>`).join('')}
+    </article>
+
+    <aside class="post-sidebar" id="postSidebar">
+      <div class="sidebar-card">
+        <div class="skeleton-line" style="height:12px;width:80px;margin-bottom:16px;"></div>
+        ${[80,60,90,70,85].map(w => `
+        <div class="skeleton-line" style="height:11px;width:${w}%;margin-bottom:10px;"></div>`).join('')}
+      </div>
+    </aside>
+  </div>
+</div>
+
+<section class="cta-section">
+  <div class="container">
+    <div class="cta-box">
+      <h2>Put this knowledge to work</h2>
+      <p>Browse our micro-SaaS tools and start your 14-day free trial today.</p>
+      <a href="index.html" class="btn-primary">Browse All Tools</a>
+    </div>
+  </div>
+</section>
+
+<footer class="footer" id="mainFooter"></footer>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+  renderNav('blog');
+  renderFooter();
+
+  const RANKAI_API = 'https://rankai.ai/api/v1/cmn0yf2020001yog8zmfr7miu/articles';
+
+  function formatDate(dateStr) {
+    if (!dateStr) return '';
+    try {
+      return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    } catch { return ''; }
+  }
+
+  function buildTOC(html) {
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    const headings = div.querySelectorAll('h2, h3');
+    if (headings.length < 2) return '';
+    return Array.from(headings).map((h, i) => {
+      const id = 'heading-' + i;
+      h.id = id;
+      const isH3 = h.tagName === 'H3';
+      return `<a href="#${id}" class="toc-link ${isH3 ? 'toc-h3' : ''}">${h.textContent}</a>`;
+    }).join('');
+  }
+
+  async function loadPost() {
+    const params = new URLSearchParams(window.location.search);
+    const slug = params.get('slug');
+
+    if (!slug) {
+      window.location.href = 'blog.html';
+      return;
+    }
+
+    try {
+      const res = await fetch(`${RANKAI_API}/${encodeURIComponent(slug)}?format=html`);
+      if (!res.ok) throw new Error('Not found');
+      const article = await res.json();
+
+      const title = article.title || 'Untitled';
+      const date = formatDate(article.publishedAt || article.published_at || article.createdAt);
+      const tag = article.category || article.tags?.[0] || 'Guide';
+      const readTime = article.readTime || article.read_time;
+      const imgUrl = article.coverImage || article.cover_image || article.image || '';
+      const content = article.content || article.html || article.body || '';
+
+      // Update page meta
+      document.title = `${title} — SellerActions Blog`;
+      const metaDesc = document.querySelector('meta[name="description"]') || document.createElement('meta');
+      metaDesc.name = 'description';
+      metaDesc.content = article.excerpt || article.description || title;
+      document.head.appendChild(metaDesc);
+
+      // Add OG tags
+      [['og:title', title], ['og:description', metaDesc.content], ['og:type', 'article']].forEach(([p, c]) => {
+        let tag = document.querySelector(`meta[property="${p}"]`) || document.createElement('meta');
+        tag.setAttribute('property', p);
+        tag.content = c;
+        document.head.appendChild(tag);
+      });
+
+      // Add JSON-LD
+      const ld = document.createElement('script');
+      ld.type = 'application/ld+json';
+      ld.text = JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "headline": title,
+        "description": metaDesc.content,
+        "datePublished": article.publishedAt || article.published_at || article.createdAt,
+        "publisher": { "@type": "Organization", "name": "SellerActions" }
+      });
+      document.head.appendChild(ld);
+
+      // Build TOC from content
+      const tocLinks = buildTOC(content);
+
+      // Render article
+      document.getElementById('postArticle').innerHTML = `
+        <div class="post-breadcrumb">
+          <a href="index.html">Home</a>
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+          <a href="blog.html">Blog</a>
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>${title}</span>
+        </div>
+        <h1 class="post-title">${title}</h1>
+        <div class="post-meta">
+          <span class="post-tag">${tag}</span>
+          ${date ? `<span>📅 ${date}</span>` : ''}
+          ${readTime ? `<span>⏱ ${readTime} min read</span>` : ''}
+        </div>
+        ${imgUrl ? `<img src="${imgUrl}" alt="${title}" class="post-cover">` : ''}
+        <div class="post-content">${content}</div>
+      `;
+
+      // Render sidebar
+      document.getElementById('postSidebar').innerHTML = tocLinks ? `
+        <div class="sidebar-card">
+          <h4>In this article</h4>
+          <div class="toc-list">${tocLinks}</div>
+        </div>
+        <div class="sidebar-card">
+          <h4>Related Tools</h4>
+          <p style="font-size:0.83rem;color:var(--text-secondary);margin-bottom:16px;">Tools relevant to this article's topic.</p>
+          <a href="index.html" class="btn-primary btn-sm btn-full">Browse All Tools</a>
+        </div>
+      ` : `
+        <div class="sidebar-card">
+          <h4>Related Tools</h4>
+          <p style="font-size:0.83rem;color:var(--text-secondary);margin-bottom:16px;">Micro-SaaS tools for e-commerce sellers.</p>
+          <a href="index.html" class="btn-primary btn-sm btn-full">Browse All Tools</a>
+        </div>
+      `;
+
+    } catch (e) {
+      console.error('Failed to load post:', e);
+      document.getElementById('postArticle').innerHTML = `
+        <div style="text-align:center;padding:80px 20px;">
+          <p style="color:var(--text-muted);margin-bottom:24px;">Could not load this article. It may have been moved or deleted.</p>
+          <a href="blog.html" class="btn-secondary">← Back to Blog</a>
+        </div>
+      `;
+      document.getElementById('postSidebar').innerHTML = '';
+    }
+  }
+
+  loadPost();
+</script>
+</body>
+</html>

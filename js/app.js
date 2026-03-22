@@ -528,6 +528,7 @@ function renderNav(activePage) {
           </div>
         </div>
         <a href="requests.html" class="${activePage === 'requests' ? 'active' : ''}">Requests</a>
+        <a href="blog.html" class="${activePage === 'blog' ? 'active' : ''}">Blog</a>
       </div>
       <div class="nav-right">
         <a href="cart.html" class="nav-cart">
@@ -593,6 +594,7 @@ function toggleMobileMenu() {
 
   const baseLinks = `
     <a href="index.html">Home</a>
+    <a href="blog.html">Blog</a>
     <a href="requests.html">Feature Requests</a>
     ${toolsLinks}
     <a href="cart.html" style="margin-top:8px;">Cart</a>
@@ -642,6 +644,7 @@ function renderFooter() {
           <h4>Product</h4>
           <a href="index.html#tools">All Tools</a>
           <a href="index.html#categories">Browse Categories</a>
+          <a href="blog.html">Blog</a>
           <a href="requests.html">Feature Requests</a>
           <a href="cart.html">Cart</a>
         </div>
