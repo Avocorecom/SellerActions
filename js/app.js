@@ -371,7 +371,15 @@ async function submitFeatureRequest(data) {
     await fetch(FORMSPREE_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({ _subject: `Feature Request: ${data.title}`, type: 'feature_request', ...data, timestamp: new Date().toISOString() })
+      body: JSON.stringify({
+        _subject: `🆕 Feature Request: ${data.title}`,
+        type: 'feature_request',
+        title: data.title,
+        description: data.description,
+        email: data.email || '(not provided)',
+        platform: data.platform || '(not provided)',
+        timestamp: new Date().toISOString()
+      })
     });
   } catch (e) { console.warn('Feature request submission failed:', e); }
 }

@@ -329,8 +329,12 @@ const RequestsDB = {
     return comment;
   },
 
-  // Submit a new request (goes to pending)
+  // Submit a new request (saves to Supabase AND sends email via Formspree)
   async submitRequest(title, description, email, platform) {
+    // Always notify via Formspree so an email lands in your inbox
+    await submitFeatureRequest({ title, description, email, platform });
+
+    // Also try to save to Supabase DB
     if (DB_ENABLED) {
       try {
         await db.insert('feature_requests', {
@@ -338,13 +342,11 @@ const RequestsDB = {
           status: 'pending',
           votes: 0
         });
-        return true;
       } catch (e) {
-        console.warn('Request submission to DB failed:', e);
+        console.warn('Request submission to Supabase failed (check RLS policy):', e);
       }
     }
 
-    await submitFeatureRequest({ title, description, email, platform });
     return true;
   },
 
