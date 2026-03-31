@@ -365,45 +365,46 @@ const Votes = {
   }
 };
 
+const NOTIFY_FUNCTION_URL = 'https://ccbcmxgdzxzgqkszcddk.supabase.co/functions/v1/notify-request';
+
+async function sendNotification(payload) {
+  try {
+    await fetch(NOTIFY_FUNCTION_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  } catch (e) { console.warn('Notification failed:', e); }
+}
+
 async function submitFeatureRequest(data) {
-  if (!FORMSPREE_ENDPOINT || FORMSPREE_ENDPOINT.includes('YOUR_FORM_ID')) return;
-  try {
-    await fetch(FORMSPREE_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({
-        _subject: `🆕 Feature Request: ${data.title}`,
-        type: 'feature_request',
-        title: data.title,
-        description: data.description,
-        email: data.email || '(not provided)',
-        platform: data.platform || '(not provided)',
-        timestamp: new Date().toISOString()
-      })
-    });
-  } catch (e) { console.warn('Feature request submission failed:', e); }
+  await sendNotification({
+    type: 'feature_request',
+    title: data.title,
+    description: data.description,
+    email: data.email || '',
+    platform: data.platform || ''
+  });
 }
 
-async function submitVote(requestId, title) {
-  if (!FORMSPREE_ENDPOINT || FORMSPREE_ENDPOINT.includes('YOUR_FORM_ID')) return;
-  try {
-    await fetch(FORMSPREE_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({ _subject: `Vote: ${title}`, type: 'vote', request_id: requestId, timestamp: new Date().toISOString() })
-    });
-  } catch (e) { console.warn('Vote submission failed:', e); }
+async function submitVote(requestId, title, email) {
+  await sendNotification({
+    type: 'vote',
+    request_id: requestId,
+    vote_title: title,
+    email: email || ''
+  });
 }
 
-async function submitComment(requestId, title, comment, author) {
-  if (!FORMSPREE_ENDPOINT || FORMSPREE_ENDPOINT.includes('YOUR_FORM_ID')) return;
-  try {
-    await fetch(FORMSPREE_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({ _subject: `Comment on: ${title}`, type: 'comment', request_id: requestId, author, comment, timestamp: new Date().toISOString() })
-    });
-  } catch (e) { console.warn('Comment submission failed:', e); }
+async function submitComment(requestId, title, comment, author, email) {
+  await sendNotification({
+    type: 'comment',
+    request_id: requestId,
+    vote_title: title,
+    comment,
+    author,
+    email: email || ''
+  });
 }
 
 // ===== SHARED COMPONENTS =====

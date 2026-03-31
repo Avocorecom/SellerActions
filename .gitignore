@@ -3,3 +3,6 @@
 node_modules/
 *.pyc
 __pycache__/
+.env
+.env.local
+supabase/.env
