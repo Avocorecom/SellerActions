@@ -223,8 +223,10 @@
       if (!res.ok) throw new Error('API error');
       const data = await res.json();
 
-      const articles = data.articles || data.data || data || [];
-      totalPages = data.totalPages || data.total_pages || Math.ceil((data.total || articles.length) / POSTS_PER_PAGE) || 1;
+      // RankAI returns { success, data: [...articles], pagination: { total, totalPages, ... } }
+      const articles = Array.isArray(data.data) ? data.data : (data.articles || data || []);
+      const pg = data.pagination || {};
+      totalPages = pg.totalPages || pg.total_pages || data.totalPages || data.total_pages || Math.ceil((pg.total || data.total || articles.length) / POSTS_PER_PAGE) || 1;
 
       const grid = document.getElementById('blogGrid');
 
@@ -236,10 +238,10 @@
       grid.innerHTML = articles.map(article => {
         const slug = article.slug || article.id;
         const title = article.title || 'Untitled';
-        const excerpt = article.excerpt || article.description || article.summary || '';
-        const date = formatDate(article.publishedAt || article.published_at || article.createdAt);
+        const excerpt = article.description || article.excerpt || article.summary || '';
+        const date = formatDate(article.publishedDate || article.publishedAt || article.published_at || article.createdAt);
         const tag = article.category || article.tags?.[0] || 'Guide';
-        const imgUrl = article.coverImage || article.cover_image || article.image || '';
+        const imgUrl = article.featuredImageUrl || article.coverImage || article.cover_image || article.image || '';
 
         return `
           <a href="post.html?slug=${encodeURIComponent(slug)}" class="blog-card">
