@@ -238,20 +238,25 @@
     try {
       const res = await fetch(`${RANKAI_API}/${encodeURIComponent(slug)}?format=html`);
       if (!res.ok) throw new Error('Not found');
-      const article = await res.json();
+      const response = await res.json();
+      // RankAI wraps articles in { success, data }. Unwrap before reading fields.
+      if (!response || response.success === false || !response.data) {
+        throw new Error('RankAI API error');
+      }
+      const article = response.data;
 
       const title = article.title || 'Untitled';
-      const date = formatDate(article.publishedAt || article.published_at || article.createdAt);
+      const date = formatDate(article.publishedDate || article.publishedAt || article.published_at || article.createdAt);
       const tag = article.category || article.tags?.[0] || 'Guide';
       const readTime = article.readTime || article.read_time;
-      const imgUrl = article.coverImage || article.cover_image || article.image || '';
+      const imgUrl = article.featuredImageUrl || article.coverImage || article.cover_image || article.image || '';
       const content = article.content || article.html || article.body || '';
 
       // Update page meta
       document.title = `${title} — SellerActions Blog`;
       const metaDesc = document.querySelector('meta[name="description"]') || document.createElement('meta');
       metaDesc.name = 'description';
-      metaDesc.content = article.excerpt || article.description || title;
+      metaDesc.content = article.description || article.excerpt || title;
       document.head.appendChild(metaDesc);
 
       // Add OG tags
@@ -270,7 +275,7 @@
         "@type": "BlogPosting",
         "headline": title,
         "description": metaDesc.content,
-        "datePublished": article.publishedAt || article.published_at || article.createdAt,
+        "datePublished": article.publishedDate || article.publishedAt || article.published_at || article.createdAt,
         "publisher": { "@type": "Organization", "name": "SellerActions" }
       });
       document.head.appendChild(ld);
