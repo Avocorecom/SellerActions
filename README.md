@@ -1,6 +1,6 @@
 # SellerActions — Micro SaaS Tools for E-Commerce Sellers
 
-**Current Version: v1.6.0** (footer auto-stamps as `v{major}.{minor}.{commitCount}` per deploy — see VERSIONING)
+**Current Version: v1.7.0** (footer auto-stamps as `v{major}.{minor}.{commitCount}` per deploy — see VERSIONING)
 Stack: Pure HTML5 · CSS3 · Vanilla JavaScript · Supabase (PostgreSQL + REST) · Formspree · GitHub Pages · No frameworks · No build step
 
 A dynamic, SEO-friendly static website showcasing affordable micro-SaaS tools for Amazon, Shopify, Walmart, eBay, and TikTok Shop sellers.
@@ -264,6 +264,41 @@ Avocorecom sites version themselves the same way.
 **Why `fetch-depth: 0` matters:**
 GitHub Actions defaults `actions/checkout` to a shallow clone (depth=1), which would make `git rev-list --count HEAD` always return `1`. Setting `fetch-depth: 0` pulls the full history so the commit count reflects reality.
 
+### DYNAMIC SITEMAP (build-time generation)
+
+Every deploy runs [scripts/generate-sitemap.mjs](scripts/generate-sitemap.mjs) which fetches RankAI's published article URLs and merges them into [sitemap.xml](sitemap.xml) **before** the artifact is uploaded. This means search engines discover every published article via one canonical sitemap, with no manual URL submission step.
+
+This pattern mirrors the sibling sites:
+- **4fillment** uses runtime PHP (`sitemap.php`) — server fetches RankAI on each request
+- **ezcommerce-website** uses Next.js runtime (`app/sitemap.ts` with `force-dynamic`) — Netlify edge fetches RankAI per request
+- **SellerActions** uses **build-time** (`scripts/generate-sitemap.mjs`) — fetches once per deploy, since GitHub Pages serves only static files
+
+**Mechanism:**
+1. RankAI sitemap endpoint: `https://rankai.ai/api/projects/cmn0yf2020001yog8zmfr7miu/sitemap`
+2. Script extracts `<loc>` URLs from the XML response
+3. **Each URL is rewritten** from `/{slug}` to `/post.html?slug={slug}` (see "URL rewrite caveat" below)
+4. Rewritten URLs are inserted as `<url>` blocks before the closing `</urlset>` tag in the static `sitemap.xml`
+5. Merged file is uploaded as part of the GitHub Pages artifact — the committed `sitemap.xml` is unchanged in git
+
+**Resilience:**
+- 5s `AbortSignal.timeout` on the RankAI fetch
+- On any failure (timeout, non-2xx, parse error), the script logs a warning and exits 0 — the static `sitemap.xml` ships unchanged so the site never has a broken sitemap
+- The deploy workflow step also has `continue-on-error: true` as defense-in-depth
+
+**URL rewrite caveat (temporary):**
+RankAI publishes article URLs as top-level paths (e.g., `https://www.selleractions.com/some-article-slug`), but **those URLs return 404 on GitHub Pages** because there's no rewrite layer (no `.htaccess`, no Next.js routing, no `404.html` SPA fallback yet). The actual working URL pattern is `/post.html?slug={slug}` — that's what `blog.html` links to, and that's what gets injected into the sitemap.
+
+This means:
+- ✅ Sitemap entries all return HTTP 200 → safe to submit to Google Search Console
+- ⚠️ RankAI's "canonical" URLs (in their dashboard, in cross-links from other RankAI sites) still 404
+- 🔧 To fix: either reconfigure RankAI's `publishedUrl` template to include `/post.html?slug=`, OR add a `404.html` GitHub Pages SPA fallback that rewrites root-level slugs, OR generate static `.html` files per slug at build time. Once any of those land, remove the rewrite step in `scripts/generate-sitemap.mjs`.
+
+**Local dry-run:**
+```bash
+node scripts/generate-sitemap.mjs   # writes merged sitemap.xml
+git checkout sitemap.xml            # restore committed version
+```
+
 ### Custom Domain
 To use a custom domain (e.g., `tools.selleractions.com`):
 1. Go to repo Settings → Pages
@@ -376,6 +411,24 @@ v1.5.0  Stamped automatically into js/app.js at deploy time as
         services/ folder with two custom-order-update integrations
         (ShipStation, Veeqo). README.md updated with full version-control
         section and this version log.
+v1.7.0  Dynamic sitemap with RankAI integration.
+        Every deploy now merges RankAI's published article URLs into
+        sitemap.xml at build time, so search engines discover every
+        article via a single canonical sitemap (no manual URL
+        submission).
+        Pattern: build-time fetch via scripts/generate-sitemap.mjs in
+        GitHub Actions, with AbortSignal 5s timeout, graceful fallback
+        to static sitemap.xml on any RankAI failure, and `continue-on-
+        error: true` defense-in-depth on the workflow step.
+        URL rewrite: RankAI's /{slug} URLs are rewritten to
+        /post.html?slug={slug} so injected entries return HTTP 200
+        (root-level slugs 404 on GitHub Pages without a rewrite layer).
+        Verified locally: 56 → 91 URLs in sitemap (35 RankAI articles
+        added). Sample rewritten URL returns HTTP 200 live.
+        Mirrors 4fillment's sitemap.php and ezcommerce's app/sitemap.ts
+        (each adapted for their stack).
+        Changed files: scripts/generate-sitemap.mjs (new),
+        .github/workflows/deploy.yml, README.md, VERSION (1.6.0 → 1.7.0)
 v1.6.0  Aligned versioning mechanism with the sibling ezcommerce-website
         project. Every commit now produces a monotonically-increasing
         version stamp of the form `v{major}.{minor}.{commitCount}`, where
@@ -413,4 +466,4 @@ Copyright 2026 SellerActions / Avocore. All rights reserved.
 
 ---
 
-selleractions.com · README v1.6.0
+selleractions.com · README v1.7.0
