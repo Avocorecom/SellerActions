@@ -667,7 +667,7 @@ function renderFooter() {
       </div>
       <div class="footer-bottom">
         <p>&copy; 2026 SellerActions. All rights reserved.</p>
-        <p style="font-size:0.72rem; color:var(--text-muted); margin-top:4px;">__VERSION__ · deployed __DEPLOY_TIME__</p>
+        <p style="font-size:0.72rem; color:var(--text-muted); margin-top:4px;" title="commit __COMMIT__">__VERSION__ · __COMMIT__</p>
       </div>
     </div>
   `;
