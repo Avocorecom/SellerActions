@@ -39,6 +39,13 @@ jobs:
 
           echo "Stamped: ${SITE_VERSION} · ${COMMIT_SHORT}"
 
+      - name: Generate dynamic sitemap (merge RankAI articles)
+        run: node scripts/generate-sitemap.mjs
+        # Sitemap script also exits 0 on RankAI fetch failure (graceful
+        # degradation). continue-on-error is defense-in-depth so a
+        # script crash never blocks a deploy.
+        continue-on-error: true
+
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
