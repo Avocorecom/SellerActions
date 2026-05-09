@@ -21,13 +21,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full git history so `git rev-list --count HEAD` returns the real
+          # commit count (default fetch-depth is 1 = always returns 1).
+          fetch-depth: 0
 
-      - name: Stamp version and deploy time
+      - name: Stamp version into js/app.js
         run: |
+          BASE_VERSION=$(cat VERSION | tr -d '[:space:]')
+          BASE_MAJOR_MINOR=$(echo "$BASE_VERSION" | cut -d. -f1,2)
+          COMMIT_COUNT=$(git rev-list --count HEAD)
           COMMIT_SHORT=$(git rev-parse --short HEAD)
-          DEPLOY_TIME=$(date -u +"%Y-%m-%d %H:%M UTC")
-          sed -i "s/__VERSION__/v1.5.0-${COMMIT_SHORT}/g" js/app.js
-          sed -i "s/__DEPLOY_TIME__/${DEPLOY_TIME}/g" js/app.js
+          SITE_VERSION="v${BASE_MAJOR_MINOR}.${COMMIT_COUNT}"
+
+          sed -i "s/__VERSION__/${SITE_VERSION}/g" js/app.js
+          sed -i "s/__COMMIT__/${COMMIT_SHORT}/g" js/app.js
+
+          echo "Stamped: ${SITE_VERSION} · ${COMMIT_SHORT}"
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

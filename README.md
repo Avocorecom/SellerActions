@@ -1,8 +1,12 @@
 # SellerActions — Micro SaaS Tools for E-Commerce Sellers
 
+**Current Version: v1.6.0** (footer auto-stamps as `v{major}.{minor}.{commitCount}` per deploy — see VERSIONING)
+Stack: Pure HTML5 · CSS3 · Vanilla JavaScript · Supabase (PostgreSQL + REST) · Formspree · GitHub Pages · No frameworks · No build step
+
 A dynamic, SEO-friendly static website showcasing affordable micro-SaaS tools for Amazon, Shopify, Walmart, eBay, and TikTok Shop sellers.
 
-**Live Site:** [https://avocorecom.github.io/SellerActions/](https://avocorecom.github.io/SellerActions/)
+**Live Site (custom domain):** [https://www.selleractions.com/](https://www.selleractions.com/) — CNAME: `selleractions.com`
+**GitHub Pages URL:** [https://avocorecom.github.io/SellerActions/](https://avocorecom.github.io/SellerActions/)
 
 ---
 
@@ -216,9 +220,49 @@ The site is deployed to GitHub Pages via a GitHub Actions workflow.
 
 ### Automatic Deployment
 Every push to `main` triggers the `.github/workflows/deploy.yml` workflow which:
-1. Checks out the code
-2. Uploads the entire directory as a GitHub Pages artifact
-3. Deploys to GitHub Pages
+1. Checks out the code with **full git history** (`fetch-depth: 0` — required for the auto-incrementing commit count below)
+2. **Stamps the version** into `js/app.js` (see VERSIONING below)
+3. Uploads the entire directory as a GitHub Pages artifact
+4. Deploys to GitHub Pages
+
+### VERSIONING (auto-stamped on every commit)
+
+The footer displays a build-stamped version derived from a **VERSION** file at the
+repo root + git. Every commit produces a new, monotonically-increasing version
+visible in production with **no manual bookkeeping**.
+
+This pattern is mirrored from the sibling `ezcommerce-website` project so all
+Avocorecom sites version themselves the same way.
+
+**Format:** `v{major}.{minor}.{commitCount}` — e.g., `v1.6.57`
+- `major.minor` come from the [VERSION](VERSION) file (single source of truth)
+- `commitCount` = `git rev-list --count HEAD` — auto-increments by 1 on every commit
+- Short commit SHA is appended after a ` · ` for traceability
+
+**Mechanism:**
+1. [.github/workflows/deploy.yml](.github/workflows/deploy.yml) reads `VERSION` + git, replaces tokens in `js/app.js` via `sed`
+2. Two placeholders are replaced at deploy time:
+
+   | Token (in source) | Replaced with | Source |
+   |---|---|---|
+   | `__VERSION__` | `v{major}.{minor}.{commitCount}` | `VERSION` file + `git rev-list --count HEAD` |
+   | `__COMMIT__` | `{shortSha}` | `git rev-parse --short HEAD` |
+
+3. Footer renders: `v1.6.57 · 0397bfa` (with hover tooltip showing the commit SHA) — see [js/app.js](js/app.js) line 670
+
+**Local stamping (optional, for testing):**
+- Run `bash scripts/generate-version.sh` to apply the same stamp locally — useful if you want to see the rendered version before pushing
+- Restore placeholders before committing: `git checkout js/app.js`
+- The placeholders `__VERSION__` and `__COMMIT__` are the canonical source of truth in git; the deploy workflow is the only thing that should produce stamped values in the deployed artifact
+
+**Bumping major.minor:**
+1. Edit [VERSION](VERSION) — bump `1.6.0` to `1.7.0` (or whatever)
+2. Update **Current Version** at the top of this README and add an entry to **VERSION HISTORY**
+3. Commit and push — the new version stamp ships on the next deploy
+4. `commitCount` keeps incrementing across releases (it doesn't reset)
+
+**Why `fetch-depth: 0` matters:**
+GitHub Actions defaults `actions/checkout` to a shallow clone (depth=1), which would make `git rev-list --count HEAD` always return `1`. Setting `fetch-depth: 0` pulls the full history so the commit count reflects reality.
 
 ### Custom Domain
 To use a custom domain (e.g., `tools.selleractions.com`):
@@ -309,6 +353,64 @@ Top-scored products (8.5+) are automatically marked as "Featured / TOP PICK."
 
 ---
 
+## VERSION HISTORY
+
+This log was started retroactively. Versions before v1.5.0 are inferred from
+[.github/workflows/deploy.yml](.github/workflows/deploy.yml) where `v1.5.0` is
+hardcoded as the current baseline; the actual change set behind earlier tags
+lives only in git history (`git log --oneline`).
+
+```
+v1.0.0  Initial static site — homepage, product pages, category pages,
+        cart with localStorage, Formspree integration. (inferred baseline)
+v1.x.0  Iterative product catalog growth (14 live + 27 → 36 coming-soon),
+        category filters, search, bundle discount logic, dark theme.
+        Specific minor versions not logged at the time.
+v1.5.0  Stamped automatically into js/app.js at deploy time as
+        `v1.5.0-${COMMIT_SHORT}` via .github/workflows/deploy.yml.
+        Includes: Supabase-backed feature request system (with localStorage
+        fallback), email-prompt modal for vote/comment, status lifecycle
+        (pending → open → popular → planned → building → launched),
+        custom domain selleractions.com (GitHub Pages), CNAME file,
+        Amazon SP-API authorize-amazon-seller-account flow folder, and
+        services/ folder with two custom-order-update integrations
+        (ShipStation, Veeqo). README.md updated with full version-control
+        section and this version log.
+v1.6.0  Aligned versioning mechanism with the sibling ezcommerce-website
+        project. Every commit now produces a monotonically-increasing
+        version stamp of the form `v{major}.{minor}.{commitCount}`, where
+        major.minor come from a new VERSION file at the repo root and
+        commitCount = `git rev-list --count HEAD`. The deploy workflow now
+        clones with full git history (`fetch-depth: 0`) so the count is
+        accurate. Footer template in js/app.js:670 changed from
+        `__VERSION__ · deployed __DEPLOY_TIME__` to `__VERSION__ · __COMMIT__`,
+        matching ezcommerce. Added scripts/generate-version.sh for local
+        testing (mirror of ezcommerce's scripts/generate-version.mjs,
+        adapted for shell + sed). README VERSIONING section rewritten.
+        Changed files: VERSION (new), .github/workflows/deploy.yml,
+        js/app.js, scripts/generate-version.sh (new), README.md
+```
+
+**To start logging future changes here**, follow the same format used by the
+sibling projects (4fillment, ezcommerce-website):
+
+```
+vX.Y.Z  Short sentence on the change. Why it was made. What files were
+        touched. Any rollout/migration notes.
+        Changed files: ...
+```
+
+Bump rules of thumb:
+- **Patch (`v1.5.x`)** — bug fixes, copy edits, single product additions
+- **Minor (`v1.x.0`)** — new feature (new page, new system, schema change), batch product changes
+- **Major (`vX.0.0`)** — breaking change in URL structure, removal of a feature, framework migration
+
+---
+
 ## License
 
 Copyright 2026 SellerActions / Avocore. All rights reserved.
+
+---
+
+selleractions.com · README v1.6.0
