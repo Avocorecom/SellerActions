@@ -250,7 +250,18 @@
       const tag = article.category || article.tags?.[0] || 'Guide';
       const readTime = article.readTime || article.read_time;
       const imgUrl = article.featuredImageUrl || article.coverImage || article.cover_image || article.image || '';
-      const content = article.content || article.html || article.body || '';
+      const rawContent = article.content || article.html || article.body || '';
+
+      // RankAI's `content` already starts with the article <h1> and a
+      // <div class="hero-image-container"> with the cover image. Since we
+      // render our own breadcrumb + <h1 class="post-title"> + cover <img>
+      // above the content, strip those leading elements so they don't
+      // appear twice.
+      const contentDiv = document.createElement('div');
+      contentDiv.innerHTML = rawContent;
+      contentDiv.querySelector('h1')?.remove();
+      contentDiv.querySelector('.hero-image-container')?.remove();
+      const content = contentDiv.innerHTML;
 
       // Update page meta
       document.title = `${title} — SellerActions Blog`;
